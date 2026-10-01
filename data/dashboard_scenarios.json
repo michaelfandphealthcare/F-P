@@ -1,0 +1,19 @@
+{
+  "sector_mix": [
+    ["Bank impersonation", 34],
+    ["Delivery / tax", 28],
+    ["University account", 19],
+    ["Sports / ticketing", 17],
+    ["Other service", 22]
+  ],
+  "warning_signals": [
+    ["Urgency", 72],
+    ["Impersonation", 63],
+    ["Suspicious link", 58],
+    ["Credentials", 46],
+    ["Payment request", 39]
+  ],
+  "official_trend": [["All fraud", 4200000], ["Bank / credit", 2400000], ["Consumer / retail", 1100000]],
+  "contact_method": [["Telephone", 39], ["Online / social", 32], ["Email", 13], ["Text message", 4]],
+  "status": "demonstration data; replace with documented experiment results"
+}

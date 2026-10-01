@@ -1,0 +1,24 @@
+text,label,type
+"Your account will be suspended today. Verify your details using the link below.",phishing,urgency
+"We noticed unusual activity. Confirm your password immediately to keep access.",phishing,credentials
+"You have won a prize. Pay a small delivery fee to release your reward.",phishing,payment
+"Your parcel is waiting. Please confirm your address and card details through this link.",phishing,impersonation
+"Final warning: your tax refund cannot be processed until you confirm your bank details.",phishing,impersonation
+"Your university account needs urgent verification. Sign in now to avoid closure.",phishing,credentials
+"A payment has been scheduled from your account. Cancel it using the secure link below.",phishing,urgency
+"Congratulations, your account has been selected for a cash reward. Claim it today.",phishing,payment
+"Please send your one-time passcode so our support team can restore your account.",phishing,credentials
+"Your subscription failed. Update your card details within 24 hours or service will end.",phishing,payment
+"We are unable to deliver your package. Confirm your information to arrange delivery.",phishing,impersonation
+"You must act now to prevent legal action. Open the attached document and provide your details.",phishing,urgency
+"The library will be closed on Monday for scheduled maintenance.",legitimate,notice
+"Your appointment is confirmed for Tuesday at 10:30. Please contact reception if you need to change it.",legitimate,appointment
+"The meeting agenda is attached. Please send any comments before Friday.",legitimate,work
+"Your parcel has been delivered to the reception desk. Tracking is available in the official app.",legitimate,delivery
+"The monthly statement is now available in your usual online banking portal.",legitimate,finance
+"Please remember to submit your coursework through the university learning platform.",legitimate,education
+"The IT team will perform maintenance from 22:00 to 23:00 tonight.",legitimate,notice
+"Thank you for attending the meeting. The actions are listed in the shared document.",legitimate,work
+"Your membership renewal is due next month. You can manage it from the account settings page.",legitimate,subscription
+"The school will send a separate notice if your contact details need updating.",legitimate,education
+"Your delivery is scheduled for tomorrow. You can change the delivery preference in the official app.",legitimate,delivery
