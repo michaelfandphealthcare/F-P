@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ScamShield | A calmer second opinion</title>
+  <link rel="icon" href="/static/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="stylesheet" href="/static/dashboard.css">
+  <link rel="stylesheet" href="/static/pro.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 40 40" role="img"><path d="M20 3.5 34 8.7v9.8c0 8.7-5.7 15.2-14 18-8.3-2.8-14-9.3-14-18V8.7L20 3.5Z" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="m12.7 20.2 4.7 4.7 10-10" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/></svg></span><span class="brand-copy"><strong>ScamShield</strong><small>Fraud intelligence workspace</small></span></div>
+    <div class="workspace-crumb"><span class="crumb-dot"></span> Academic research <b>/</b> Scam prevention</div>
+    <nav class="nav"><button class="nav-btn active" data-view="scanner">Scanner</button><button class="nav-btn" data-view="evidence">Evidence lab</button><button class="nav-btn" data-view="dashboard">Research dashboard</button><span class="system-status"><i></i> System online</span><span class="prototype-pill">v1.0 research build</span></nav>
+  </header>
+  <main class="shell">
+    <section class="hero view scanner-view">
+      <div class="hero-copy"><div class="hero-kicker"><span class="live-dot"></span> Live research prototype <b>/</b> Evidence-led analysis</div>
+        <h1>See the signal<br><em>before the loss.</em></h1>
+        <p>ScamShield turns suspicious messages into a clear, explainable decision aid—so people can pause, understand the warning signs and choose a safer next step.</p>
+        <div class="hero-actions"><button class="hero-cta" data-scroll="workspace">Start an analysis <span>→</span></button><span>Local preview · no inbox connection</span></div>
+      </div>
+      <aside class="hero-insight"><div class="insight-label"><span>Research focus</span><span class="insight-index">01</span></div><strong>Make digital trust easier to inspect.</strong><p>Built for messages that imitate banks, universities, sports organisations and healthcare services.</p><div class="insight-metrics"><div><b>4</b><span>target sectors</span></div><div><b>3</b><span>review stages</span></div><div><b>0</b><span>real accounts linked</span></div></div></aside>
+    </section>
+    <div class="workflow-strip scanner-view" aria-label="Analysis workflow"><div class="workflow-step active"><span>01</span><div><strong>Paste evidence</strong><small>Message or screenshot</small></div></div><div class="workflow-line"></div><div class="workflow-step"><span>02</span><div><strong>Analyse signals</strong><small>Explainable warning signs</small></div></div><div class="workflow-line"></div><div class="workflow-step"><span>03</span><div><strong>Review safely</strong><small>Human decision support</small></div></div></div>
+    <section class="sector-visuals view scanner-view">
+      <div class="section-kicker"><div><span class="eyebrow">The problem spans every trusted service</span><h2>One threat. Four high-value targets.</h2></div><span class="context-label">Context imagery · not incident evidence</span></div>
+      <div class="sector-visual-grid">
+        <article class="sector-visual bank-visual"><div class="sector-overlay"><span>01 · Finance</span><strong>Bank impersonation</strong><small>Payments · credentials · spoofed contact</small></div></article>
+        <article class="sector-visual uni-visual"><div class="sector-overlay"><span>02 · Education</span><strong>University accounts</strong><small>Student login · fees · identity</small></div></article>
+        <article class="sector-visual sport-visual"><div class="sector-overlay"><span>03 · Sport</span><strong>Ticketing scams</strong><small>Fake resale · urgency · scarcity</small></div></article>
+        <article class="sector-visual health-visual"><div class="sector-overlay"><span>04 · Healthcare</span><strong>Protected services</strong><small>Trust · sensitive data · continuity</small></div></article>
+      </div>
+      <div class="home-intel-grid">
+        <div class="home-stat"><span>4.2m</span><strong>estimated fraud incidents</strong><small>England and Wales · ONS YE March 2025</small></div>
+        <div class="home-stat"><span>2.4m</span><strong>bank and credit-account incidents</strong><small>Published official estimate</small></div>
+        <div class="home-chart panel"><div class="chart-head"><div><h2>Threat surface by scenario</h2><p>Controlled research dataset</p></div><span class="chart-tag">Synthetic</span></div><div id="homeChart" class="bars"></div></div>
+      </div>
+    </section>
+    <section class="workspace view scanner-view">
+      <div class="input-panel panel">
+        <div class="panel-head"><div><h2>Check a message</h2><p>Use a fictional or public example for this academic prototype.</p></div><button id="exampleBtn" class="secondary">Try an example</button></div>
+        <label for="message">Message text</label>
+        <textarea id="message" maxlength="4000" placeholder="Paste the email or text message here..."></textarea>
+        <div class="input-meta"><span id="counter">0 / 4000</span><span>No messages are saved</span></div>
+        <button id="analyseBtn" class="primary">Analyse message <span aria-hidden="true">→</span></button>
+        <div id="error" class="error" role="alert"></div>
+      </div>
+      <div id="resultPanel" class="result-panel panel empty">
+        <div class="result-placeholder"><div class="shield">✓</div><h2>Your result will appear here</h2><p>You will see the risk level, reasons and a recommended next step.</p></div>
+      </div>
+    </section>
+    <section class="trust-row view scanner-view">
+      <div><strong>Explainable</strong><span>Reasons linked to the message</span></div>
+      <div><strong>Private by design</strong><span>No live inbox connection</span></div>
+      <div><strong>Human-led</strong><span>AI is not proof or a final decision</span></div>
+    </section>
+    <section class="evidence-lab view evidence-view hidden">
+      <div class="eyebrow">Multimodal evidence lab</div>
+      <h1>Analyse the evidence, not the victim.</h1>
+      <p class="dashboard-intro">Upload a screenshot of an email, text message or login page from a public case, university warning or your own redacted test sample. This tool reads visible scam-related text; it is not a face-recognition system and should not be used with portraits.</p>
+      <div class="lab-grid">
+        <div class="upload-card panel">
+          <div class="chart-head"><div><h2>Upload a scam screenshot</h2><p>Use an email, SMS or login-page screenshot. Never upload passwords, bank details or private messages.</p></div><span class="chart-tag teal">Local preview</span></div>
+          <label class="dropzone" for="imageInput"><input id="imageInput" type="file" accept="image/png,image/jpeg,image/webp"><span class="drop-icon">＋</span><strong>Choose an image</strong><small>PNG, JPG or WebP · maximum 8 MB</small></label>
+          <div id="imageMeta" class="image-meta empty-meta">No image selected yet.</div>
+        </div>
+        <div class="preview-card panel"><div class="chart-head"><div><h2>Visual profile</h2><p>Text and warning features shown to the researcher</p></div><span id="profileStatus" class="chart-tag">Waiting</span></div><div id="imagePreview" class="image-preview"><div class="preview-placeholder">Your redacted email, SMS or login-page screenshot will appear here.</div></div><div id="visualFlags" class="visual-flags"><span>Awaiting screenshot</span></div><button id="ocrBtn" class="secondary ocr-btn" disabled>Extract visible text</button><div id="ocrStatus" class="ocr-status"></div><pre id="ocrText" class="ocr-text"></pre><button id="useOcrBtn" class="primary ocr-use hidden">Analyse extracted text <span aria-hidden="true">→</span></button></div>
+      </div>
+      <div class="annotation-card panel"><div class="chart-head"><div><h2>Evidence annotation</h2><p>Record visible signals before the model makes a decision</p></div><span class="chart-tag">Auditable</span></div><div class="annotation-grid"><label><input class="annotation-check" data-weight="3" type="checkbox"> Urgent or threatening language</label><label><input class="annotation-check" data-weight="3" type="checkbox"> Password or login request</label><label><input class="annotation-check" data-weight="4" type="checkbox"> Payment or bank details</label><label><input class="annotation-check" data-weight="2" type="checkbox"> Suspicious link or QR code</label><label><input class="annotation-check" data-weight="2" type="checkbox"> Fake or copied branding</label><label><input class="annotation-check" data-weight="1" type="checkbox"> Unusual sender or domain</label></div><div id="annotationResult" class="annotation-result">Select visible features to generate an explainable visual-risk summary.</div></div>
+      <div class="case-library"><div class="chart-head"><div><h2>Verified public case sources</h2><p>Real-world examples for evidence collection and annotation</p></div><span class="chart-tag teal">Source-linked</span></div><div class="source-case-grid"><article><div class="source-thumb bank-thumb"><span>£</span></div><div><h3>Bank impersonation</h3><p>Fake websites, spoofed numbers and requests for account information.</p><a href="https://www.fca.org.uk/consumers/banking-online-account-scams" target="_blank" rel="noreferrer">Open FCA guidance →</a></div></article><article><div class="source-thumb uni-thumb"><span>U</span></div><div><h3>University login phishing</h3><p>Public teaching material shows how fake Microsoft-style login pages imitate university branding.</p><a href="https://www.reading.ac.uk/digital-technology-services/-/media/project/functions/digital-technology-services/documents/phishing-may-22-email.pdf" target="_blank" rel="noreferrer">Open University of Reading example →</a></div></article><article><div class="source-thumb sport-thumb"><span>★</span></div><div><h3>Football ticket fraud</h3><p>Unauthorised ticket channels and fake resale pages target fans around major fixtures.</p><a href="https://www.uefa.com/news-media/news/02a5-20a99f8db810-278e2d7a8e20-1000--uefa-warns-fans-over-risks-of-unauthorised-ticket-purchases/" target="_blank" rel="noreferrer">Open UEFA warning →</a></div></article><article><div class="source-thumb ncsc-thumb"><span>!</span></div><div><h3>Phishing and QR codes</h3><p>The NCSC explains authority, urgency, emotion, scarcity and QR-code warning signs.</p><a href="https://www.ncsc.gov.uk/collection/phishing-scams/spot-scams" target="_blank" rel="noreferrer">Open NCSC guidance →</a></div></article></div></div>
+      <div class="method-note"><strong>Method boundary:</strong> this prototype can analyse uploaded evidence and source-linked examples, but it does not identify private individuals, infer an offender's home address or claim that a named organisation was breached without an authoritative source.</div>
+    </section>
+    <section class="dashboard view dashboard-view hidden">
+      <div class="eyebrow">Research dashboard</div>
+      <h1>What the evidence is telling us</h1>
+      <p class="dashboard-intro">This dashboard separates official public evidence from fictional research scenarios used to test the prototype. The scenarios are not claims that a named organisation was breached.</p>
+      <div id="evidenceGrid" class="evidence-grid"></div>
+      <div class="chart-grid">
+        <div class="chart-card"><div class="chart-head"><div><h2>Research scenario mix</h2><p>Controlled examples created for evaluation</p></div><span class="chart-tag">Synthetic</span></div><div id="sectorChart" class="bars"></div><div class="chart-note">These values are test-scenario counts, not national crime statistics.</div></div>
+        <div class="chart-card"><div class="chart-head"><div><h2>Warning signs in the test set</h2><p>How often each signal appears in scenarios</p></div><span class="chart-tag teal">Test data</span></div><div id="signalChart" class="bars"></div><div class="chart-note">The final dissertation will replace these demonstration values with documented results.</div></div>
+        <div class="chart-card"><div class="chart-head"><div><h2>Official incident context</h2><p>ONS estimates, England and Wales</p></div><span class="chart-tag teal">Official</span></div><div id="officialTrendChart" class="bars"></div><div class="chart-note">These are published estimates, not outputs from the ScamShield model.</div></div>
+        <div class="chart-card"><div class="chart-head"><div><h2>First contact method</h2><p>Where contact occurred in ONS survey data</p></div><span class="chart-tag teal">Official</span></div><div id="contactChart" class="bars"></div><div class="chart-note">Reported percentages are rounded and should be read with the source methodology.</div></div>
+      </div>
+      <div class="case-library"><div class="chart-head"><div><h2>Case library</h2><p>Sector examples used to keep the product grounded in real life</p></div></div><div class="case-grid"><article><span class="case-icon bank">£</span><div><h3>Bank impersonation</h3><p>Urgent account or payment message.</p></div></article><article><span class="case-icon uni">U</span><div><h3>University account</h3><p>Student login or fee message.</p></div></article><article><span class="case-icon sport">★</span><div><h3>Sports and ticketing</h3><p>Fake ticket, membership or fixture message.</p></div></article><article><span class="case-icon parcel">↗</span><div><h3>Delivery and government</h3><p>Parcel, tax or service impersonation.</p></div></article></div></div>
+      <div class="source-note">Public context: <a href="https://www.gov.uk/government/publications/fraud-strategy-2026-to-2029" target="_blank" rel="noreferrer">UK Fraud Strategy 2026 to 2029</a>. The dashboard is an academic research view, not a live crime-monitoring service.</div>
+    </section>
+  </main>
+  <footer><span>ScamShield is a controlled academic prototype.</span><span>Always verify important requests independently.</span></footer>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>
