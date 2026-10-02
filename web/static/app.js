@@ -226,7 +226,17 @@ function renderMeasuredCharts(evaluation) {
   const metricTable = document.getElementById('metricTable');
   if (metricTable) metricTable.innerHTML = `<table><caption>Measured performance percentages</caption><thead><tr><th>Metric</th><th>Value</th><th>Meaning</th></tr></thead><tbody><tr><th>Precision</th><td>${Math.round((metrics.precision || 0) * 100)}%</td><td>How many flagged messages were scams</td></tr><tr><th>Recall</th><td>${Math.round((metrics.recall || 0) * 100)}%</td><td>How many scams were detected</td></tr><tr><th>F1</th><td>${Math.round((metrics.f1 || 0) * 100)}%</td><td>Combined precision/recall measure</td></tr></tbody></table>`;
   const scenarioChart = document.getElementById('scenarioChart');
-  if (scenarioChart) scenarioChart.innerHTML = `<div class="pending-icon" aria-hidden="true">—</div><strong>Scenario comparison pending</strong><p>${escapeHtml(evaluation.scenario_performance_status || 'More held-out examples are needed before reporting scenario-level performance.')}</p>`;
+  if (scenarioChart) {
+    const records = evaluation.records || [];
+    scenarioChart.innerHTML = records.map(record => {
+      const actual = record.label === 'phishing' ? 'scam' : 'legitimate';
+      const predicted = record.prediction === 1 ? 'scam' : 'legitimate';
+      const correct = actual === predicted;
+      const status = correct ? (actual === 'scam' ? 'Detected' : 'Correctly clear') : (actual === 'scam' ? 'Missed' : 'False alarm');
+      const tone = correct ? (actual === 'scam' ? 'success' : 'neutral') : 'error';
+      return `<div class="scenario-outcome-row"><span class="scenario-outcome-label">${escapeHtml(record.scenario)}</span><span class="scenario-outcome-track"><span class="scenario-outcome-fill ${tone}"></span></span><strong class="scenario-outcome-status ${tone}">${status}</strong><small>n=1</small></div>`;
+    }).join('');
+  }
   const baselineChart = document.getElementById('baselineChart');
   if (baselineChart) {
     if (evaluation.baseline_metrics) {
