@@ -23,3 +23,4 @@
 @media(max-width:800px){.journey-track{grid-template-columns:1fr;gap:10px}}
 .journey-message em,.journey-alert em,.journey-safe-call em{font-style:normal;font-size:7px;letter-spacing:.12em;font-weight:900;opacity:.72}
 .journey-message,.journey-alert,.journey-safe-call{display:none}
+.journey-art{position:absolute;inset:0;width:400%;height:100%;max-width:none;object-fit:cover;object-position:left center;z-index:0;animation:journeyArtDrift 5.5s ease-in-out infinite alternate}.journey-tap .journey-art{transform:translateX(-25%)}.journey-shock .journey-art{transform:translateX(-50%)}.journey-safe .journey-art{transform:translateX(-75%)}.journey-scene:after{z-index:1}@keyframes journeyArtDrift{0%{filter:saturate(.92) brightness(.92)}100%{filter:saturate(1.08) brightness(1.04)}}
