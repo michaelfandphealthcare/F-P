@@ -1,8 +1,8 @@
 /* Official artwork layer for the fictional research-scenario cards. */
 .scenario-brand img[src*="lloyds-bank.svg"] {
-  content: url('/static/assets/logos/lloyds-bank-official.png') !important;
-  width: 148px !important;
-  height: 42px !important;
+  content: url('/static/assets/logos/lloyds-bank-official.png?v=2') !important;
+  width: 90px !important;
+  height: 32px !important;
   object-fit: contain !important;
   background: transparent !important;
   filter: none !important;
@@ -31,6 +31,15 @@
 }
 .scenario-brand img[src*="lloyds-bank.svg"],
 .scenario-brand img[src*="leeds-beckett.svg"] {
+  filter: brightness(0) invert(1) !important;
+}
+.scenario-brand.bank-brand {
+  font-size: 0 !important;
+  line-height: 0 !important;
+  gap: 0 !important;
+  white-space: nowrap;
+}
+.scenario-brand.bank-brand img[src*="lloyds-bank.svg"] {
   filter: brightness(0) invert(1) !important;
 }
 .scenario-brand img[src*="lloyds-bank.svg"],
