@@ -22,7 +22,7 @@ Users should verify important requests through an independent trusted route. The
 
 ## Current implementation
 
-`contextual-baseline-v2` combines the original TF-IDF-style NumPy baseline with conservative phrase rules. Each displayed reason includes the matched phrase and a contextual interpretation. Ordinary words are not reasons. Negated/security-awareness text and quoted scam examples are handled separately. No domain reputation, logo authentication, face recognition or live URL fetch is performed.
+`contextual-baseline-v3` combines the original TF-IDF-style NumPy baseline with conservative phrase rules. It explicitly tests authentication-code disclosure and support/helpdesk impersonation, while treating protective security advice as non-instructional context. Each displayed reason includes the matched phrase and a contextual interpretation. Ordinary words are not reasons. No domain reputation, logo authentication, face recognition or live URL fetch is performed.
 
 ## Reproducible evaluation
 

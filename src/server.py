@@ -16,6 +16,7 @@ except ImportError:  # Supports both `python src/server.py` and package imports.
 
 ROOT = Path(__file__).resolve().parents[1]
 WEB = ROOT / "web"
+BUILD_ID = os.environ.get("SCAMSHIELD_BUILD_ID") or os.environ.get("RENDER_GIT_COMMIT", "local-contextual-v3")
 DATA = ROOT / "data" / "sample_messages.csv"
 MODEL = ROOT / "artifacts" / "baseline_model.json"
 EVIDENCE = ROOT / "data" / "public_evidence.json"
@@ -41,6 +42,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
+        self.send_header("X-ScamShield-Build", BUILD_ID)
         self.end_headers()
         self.wfile.write(body)
 
@@ -49,7 +51,9 @@ class Handler(BaseHTTPRequestHandler):
         if path in ("/", "/index.html"):
             self._send(200, "text/html; charset=utf-8", (WEB / "index.html").read_bytes())
         elif path == "/health":
-            self._send(200, "application/json", b'{"status":"ok","prototype":"baseline"}')
+            self._send(200, "application/json", json.dumps({"status": "ok", "prototype": "baseline", "build_id": BUILD_ID}).encode("utf-8"))
+        elif path == "/api/meta":
+            self._send(200, "application/json", json.dumps({"build_id": BUILD_ID, "model_version": "contextual-baseline-v3", "ocr": "browser-local-tesseract"}).encode("utf-8"))
         elif path == "/api/dashboard":
             self._send(200, "application/json", json.dumps(dashboard_payload()).encode("utf-8"))
         elif path.startswith("/static/"):

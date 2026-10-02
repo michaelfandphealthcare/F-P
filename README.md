@@ -15,6 +15,7 @@ The current vertical slice uses a transparent TF-IDF-style classifier implemente
 The interface also includes a research dashboard and a multimodal evidence lab. The evidence lab previews redacted screenshots locally and records transparent human annotations for visible warning signs. Its evidence cards link to public UK sources, while its charts are explicitly labelled synthetic demonstration data or official context. This prevents the project from presenting fictional test scenarios as claims about real banks, universities, football clubs or other named organisations. See `docs/data_provenance.md` and `docs/multimodal_evidence_method.md`.
 
 The current interface is published at https://scamshield-dahk.onrender.com/.
+Deployed verification endpoints are `/health` and `/api/meta`; they expose the non-secret build identifier and model version so a release can be checked without exposing credentials.
 
 ## Run locally
 
@@ -55,3 +56,5 @@ python3 -m venv .venv
 ```
 
 The checked-in result is `data/evaluation_results.json`. It contains a small, hand-curated held-out set and must not be presented as real-world accuracy. The current test run reports precision 1.000, recall 0.800 and F1 0.889, with 1 missed scam; the limitations are shown in the Research dashboard.
+
+The current rules build is `contextual-baseline-v3`. Run the regression suite before publishing; it covers helpdesk authentication-code requests, protective security advice, complete monetary amounts and the existing scam/legitimate cases.

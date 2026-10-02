@@ -19,6 +19,7 @@ let selectedImageData = null;
 let extractedText = '';
 let selectedExampleText = '';
 let analysisRequestId = 0;
+let visualAnalysisRequestId = 0;
 
 function openLightbox() {
   const image = imagePreview?.querySelector('img');
@@ -157,17 +158,25 @@ if (ocrBtn) ocrBtn.addEventListener('click', async () => {
 if (useOcrBtn) useOcrBtn.addEventListener('click', async () => {
   extractedText = document.getElementById('ocrText').value.trim();
   if (!extractedText) { document.getElementById('ocrStatus').textContent = 'There is no extracted text to analyse. Review or enter visible message text first.'; return; }
+  const requestId = ++visualAnalysisRequestId;
   useOcrBtn.disabled = true;
   useOcrBtn.textContent = 'Analysing image evidence...';
   try {
     const response = await fetch('/api/analyse', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({text: extractedText}) });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || 'Unable to analyse the extracted evidence.');
+    if (requestId !== visualAnalysisRequestId || extractedText !== document.getElementById('ocrText').value.trim()) return;
     const reasons = data.reasons.map(reason => `<li><span>✓</span>${escapeHtml(reason)}</li>`).join('');
     visualResult.innerHTML = `<div class="visual-result-head"><div><span class="eyebrow">Image evidence result</span><h3>${escapeHtml(data.label)}</h3><span class="band">${escapeHtml(data.band)}</span></div></div><h4>Why it was flagged</h4><ul>${reasons}</ul><h4>Safer next step</h4><p class="visual-action">${escapeHtml(data.action)}</p><small class="visual-boundary">${escapeHtml(data.score_meaning || 'This result is based on visible text from the selected image and is not proof of fraud.')}</small>`;
     visualResult.classList.remove('hidden');
   } catch (err) { document.getElementById('ocrStatus').textContent = err.message; }
   finally { useOcrBtn.disabled = false; useOcrBtn.innerHTML = 'Analyse image evidence <span aria-hidden="true">→</span>'; }
+});
+
+document.getElementById('ocrText')?.addEventListener('input', () => {
+  visualAnalysisRequestId += 1;
+  visualResult?.classList.add('hidden');
+  document.getElementById('ocrStatus').textContent = 'Edited text has not been analysed yet.';
 });
 
 annotationChecks.forEach(check => check.addEventListener('change', () => {
@@ -266,14 +275,14 @@ analyseBtn.addEventListener('click', async () => {
     if (!response.ok) throw new Error(data.error || 'Unable to analyse the message.');
     if (requestId !== analysisRequestId || submittedText !== message.value.trim()) return;
     renderResult(data);
-  } catch (err) { errorBox.textContent = err.message; }
+  } catch (err) { if (requestId === analysisRequestId) errorBox.textContent = err.message; }
   finally { analyseBtn.disabled = false; analyseBtn.innerHTML = 'Analyse message <span aria-hidden="true">→</span>'; }
 });
 
 function renderResult(data) {
   resultPanel.className = 'result-panel panel';
   const reasons = data.reasons.map(reason => `<div class="reason"><i>✓</i><span>${escapeHtml(reason)}</span></div>`).join('');
-  const reasonHeading = data.label === 'Low concern' ? 'What the analysis found' : 'Signals requiring attention';
+  const reasonHeading = data.label === 'Few warning signs detected' ? 'What the analysis found' : 'Signals requiring attention';
   resultPanel.innerHTML = `<div class="result-head"><div><div class="result-label">${escapeHtml(data.label)}</div><span class="band">${escapeHtml(data.band)}</span></div></div><div class="result-section"><h3>${reasonHeading}</h3>${reasons}</div><div class="result-section"><h3>Safer next step</h3><div class="action">${escapeHtml(data.action)}</div></div><p class="result-disclaimer">${escapeHtml(data.score_meaning || 'This is decision support, not proof that a message is fraudulent.')}</p>`;
 }
 function escapeHtml(value) { return String(value).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }

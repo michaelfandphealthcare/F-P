@@ -33,7 +33,7 @@ def evaluate(train_path: Path, test_path: Path) -> dict:
     return {
         "dataset": {"train": str(train_path), "test": str(test_path), "test_rows": len(rows), "class_distribution": dict(Counter(row["label"] for row in rows))},
         "evaluation_date": date.today().isoformat(),
-        "model_version": "contextual-baseline-v2",
+        "model_version": "contextual-baseline-v3",
         "metrics": {"precision": round(precision, 3), "recall": round(recall, 3), "f1": round(f1, 3), "false_positives": fp, "missed_scams": fn, "confusion_matrix": {"true_negative": tn, "false_positive": fp, "false_negative": fn, "true_positive": tp}},
         "records": records,
         "limitations": ["Small, hand-curated development and held-out sets are not representative of real-world prevalence.", "The screening score is not calibrated probability.", "No domain reputation or live URL verification is performed."],

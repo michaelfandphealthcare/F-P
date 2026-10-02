@@ -26,14 +26,32 @@ NEGATED_SECURITY = re.compile(
     r"(?:password|passcode|one[- ]time code|otp|security code|login)\b", re.I
 )
 EDUCATIONAL_CONTEXT = re.compile(r"\b(awareness|security advice|example of (?:a )?scam|spot (?:a )?scam|protect yourself|phishing is|scammers? may)\b", re.I)
+PROTECTIVE_ADVICE = re.compile(
+    r"\b(?:never|do not|don't|dont|avoid|remember|be careful|stay safe|report)\b"
+    r"[^.?!]{0,140}\b(?:password|passcode|code|otp|link|bank|account|payment|sender|scam|details)\b",
+    re.I,
+)
+AUTH_CODE_REQUEST = re.compile(
+    r"\b(?:reply|send|share|tell|give|provide|forward|enter|type|confirm|verify|approve|authori[sz]e)\b"
+    r"[^.?!]{0,100}\b(?:six[- ]digit|\d[- ]digit|security|verification|authentication|one[- ]time|otp|passcode|access|login)"
+    r"\s*(?:code|number|approval|request|token)?\b",
+    re.I,
+)
+SUPPORT_IMPERSONATION = re.compile(
+    r"\b(?:it|technical|account|customer|service|help)\s*(?:support|helpdesk|desk|team)\b"
+    r"|\b(?:helpdesk|support desk|support team|technical support)\b",
+    re.I,
+)
 
 SIGNAL_RULES = [
     ("urgency", re.compile(r"\b(urgent(?:ly)?|immediately|act now|final warning|today|within\s+\d+\s*(?:minutes?|hours?)|expires?\s+(?:today|soon)|before\s+\d+\s*(?:minutes?|hours?))\b", re.I), "The message uses a time limit or pressure to make a quick decision more likely."),
     ("credentials", re.compile(r"\b(?:send|share|enter|provide|confirm|verify|update|reset|submit|type|need|needs|require|required|requires)\b[^.?!]{0,80}\b(password|passcode|one[- ]time code|otp|security code|login details|sign[- ]in details)\b|\b(password|passcode|one[- ]time code|otp|security code)\b[^.?!]{0,50}\b(?:required|needed|confirm|verify|send|share|enter|now|immediately)\b", re.I), "It asks for a password, one-time code or other security credential."),
-    ("payment", re.compile(r"\b(?:pay|send|transfer|authori[sz]e|settle|confirm)\b[^.?!]{0,90}(?:£\s?\d|\$\s?\d|€\s?\d|payment|bank details|card details|account number|fee|charge)|(?:£\s?\d[\d,.]*|\$\s?\d[\d,.]*|€\s?\d[\d,.]*)[^.?!]{0,70}\b(?:send|pay|transfer|urgent|now|today|account)\b|\b(?:payment|bank details|card details|fee|charge)\b[^.?!]{0,50}\b(?:required|needed|confirm|pay|send|update)\b", re.I), "It requests or pressures the reader to make a payment or disclose payment details."),
+    ("payment", re.compile(r"\b(?:pay|send|transfer|authori[sz]e|settle|confirm)\b[^.?!]{0,90}(?:£\s?\d[\d,.]*|\$\s?\d[\d,.]*|€\s?\d[\d,.]*|payment|bank details|card details|account number|fee|charge)|(?:£\s?\d[\d,.]*|\$\s?\d[\d,.]*|€\s?\d[\d,.]*)[^.?!]{0,70}\b(?:send|pay|transfer|urgent|now|today|account)\b|\b(?:payment|bank details|card details|fee|charge)\b[^.?!]{0,50}\b(?:required|needed|confirm|pay|send|update)\b", re.I), "It requests or pressures the reader to make a payment or disclose payment details."),
     ("link", re.compile(r"(?:https?://|www\.)\S+|\b(?:click|tap|open|scan|follow)\b[^.?!]{0,45}\b(?:link|url|qr|code|button|website|portal)\b|\b(?:at|using|via|through)\s+(?:this\s+)?(?:link|url|website|portal)\b", re.I), "It directs the reader to a link, QR code or external destination."),
     ("impersonation", re.compile(r"\b(?:your\s+)?(?:bank|banking|tax office|hmrc|university|student account|nhs|health service|hospital|delivery company|parcel service|football club|ticket office|support team)\b[^.?!]{0,90}\b(?:verify|confirm|pay|send|sign|login|log in|click|open|update|claim|secure|avoid)\b|\b(?:verify|confirm|pay|send|sign|login|log in|click|open|update|claim|secure|avoid)\b[^.?!]{0,90}\b(?:bank|banking|tax office|hmrc|university|student account|nhs|health service|hospital|delivery company|parcel service|football club|ticket office|support team)\b", re.I), "It combines a trusted-service identity with a request or action."),
     ("family_impersonation", re.compile(r"\b(?:mum|mom|dad|son|daughter|brother|sister|family|friend)\b[^.?!]{0,100}\b(?:send|transfer|lend|pay|money|£\s?\d|bank)\b|\b(?:send|transfer|lend|pay)\b[^.?!]{0,70}\b(?:mum|mom|dad|son|daughter|brother|sister|family|friend)\b", re.I), "It resembles a family or friend impersonation request involving money."),
+    ("authentication_code", AUTH_CODE_REQUEST, "It asks the reader to disclose or enter an authentication code, approval or verification number."),
+    ("support_impersonation", SUPPORT_IMPERSONATION, "It presents itself as a support or helpdesk contact; verify that identity independently."),
 ]
 
 LEGITIMATE_CONTEXT = [
@@ -147,22 +165,30 @@ def contextual_analysis(text: str, probability: float, model: ScamShieldModel) -
     score = 0.08 + max(0.0, min(0.18, (probability - 0.5) * 0.25))
     negated = bool(NEGATED_SECURITY.search(clean))
     educational = bool(EDUCATIONAL_CONTEXT.search(clean))
+    protective = bool(PROTECTIVE_ADVICE.search(clean)) or negated
     for key, pattern, message in SIGNAL_RULES:
         phrase = _first_phrase(pattern, clean)
         if phrase:
             matched.append(key)
             evidence.append({"phrase": phrase, "explanation": message})
-            score += {"urgency": .18, "credentials": .45, "payment": .28, "link": .12, "impersonation": .12, "family_impersonation": .30}[key]
-    if negated or educational:
+        score += {"urgency": .18, "credentials": .45, "payment": .28, "link": .12, "impersonation": .12, "family_impersonation": .30, "authentication_code": .38, "support_impersonation": .10}[key]
+    if protective or educational:
         score -= 0.45
-        matched = [key for key in matched if key != "credentials"]
-        evidence = [item for item in evidence if not any(term in item["phrase"].lower() for term in ("password", "passcode", "one-time code", "otp", "security code"))]
+        matched = []
+        evidence = []
     if "credentials" in matched and ("urgency" in matched or "impersonation" in matched):
         score += 0.12
+    if "authentication_code" in matched and "support_impersonation" in matched:
+        score += 0.16
     if "payment" in matched and "urgency" in matched:
         score += 0.08
     if any(pattern.search(clean) for pattern in LEGITIMATE_CONTEXT):
         score -= 0.16
+    if protective or educational:
+        # A warning about scams is not itself a scam request. Keep the
+        # classifier's explanation conservative even if lexical training
+        # features contain words such as password, bank or code.
+        score = min(score, 0.18)
     score = round(max(0.02, min(0.98, score)), 3)
     if score >= 0.68:
         label, band = "High risk", "High caution"
@@ -186,7 +212,7 @@ def contextual_analysis(text: str, probability: float, model: ScamShieldModel) -
         "evidence": evidence[:4],
         "signals": matched,
         "action": action,
-        "model_version": "contextual-baseline-v2",
+        "model_version": "contextual-baseline-v3",
     }
 
 

@@ -31,6 +31,31 @@ class ScamShieldTests(unittest.TestCase):
         self.assertIn('payment', result['signals'])
         self.assertTrue(any('10 minutes' in reason for reason in result['reasons']))
 
+    def test_helpdesk_code_request_is_detected_without_sentence_matching(self):
+        text = 'Hello, I am from the IT helpdesk. To finish your account migration, reply with the six-digit code that just arrived on your phone.'
+        result = explain(text, self.model.predict_probability(text), self.model)
+        self.assertIn('authentication_code', result['signals'])
+        self.assertIn('support_impersonation', result['signals'])
+        self.assertIn(result['label'], {'High risk', 'Needs verification'})
+        self.assertTrue(any('six-digit code' in reason for reason in result['reasons']))
+
+    def test_unfamiliar_authentication_code_paraphrase_is_detected(self):
+        text = 'Security operations need you to forward the verification number from your phone to approve the new login.'
+        result = explain(text, self.model.predict_probability(text), self.model)
+        self.assertIn('authentication_code', result['signals'])
+
+    def test_protective_security_advice_has_no_misleading_warning_reason(self):
+        text = 'Never share your password or one-time code with anyone. Open your bank app only through the official app.'
+        result = explain(text, self.model.predict_probability(text), self.model)
+        self.assertEqual(result['label'], 'Few warning signs detected')
+        self.assertEqual(result['signals'], [])
+        self.assertTrue(all('Open your bank' not in reason for reason in result['reasons']))
+
+    def test_payment_amount_is_not_truncated(self):
+        text = 'Please send £850 to the supplier today using the invoice details.'
+        result = explain(text, self.model.predict_probability(text), self.model)
+        self.assertTrue(any('£850' in reason for reason in result['reasons']))
+
     def test_normal_notice_is_not_high_caution(self):
         text = 'The library will be closed on Monday for scheduled maintenance.'
         result = explain(text, self.model.predict_probability(text), self.model)
