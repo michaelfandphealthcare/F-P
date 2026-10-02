@@ -228,7 +228,15 @@ function renderMeasuredCharts(evaluation) {
   const scenarioChart = document.getElementById('scenarioChart');
   if (scenarioChart) scenarioChart.innerHTML = `<div class="pending-icon" aria-hidden="true">—</div><strong>Scenario comparison pending</strong><p>${escapeHtml(evaluation.scenario_performance_status || 'More held-out examples are needed before reporting scenario-level performance.')}</p>`;
   const baselineChart = document.getElementById('baselineChart');
-  if (baselineChart && !evaluation.baseline_metrics) baselineChart.innerHTML = `<div class="pending-icon" aria-hidden="true">—</div><strong>Baseline comparison pending</strong><p>${escapeHtml(evaluation.baseline_status || 'No independently measured baseline is available for this split.')}</p>`;
+  if (baselineChart) {
+    if (evaluation.baseline_metrics) {
+      const baseline = evaluation.baseline_metrics;
+      const rows = [['Precision', metrics.precision || 0, baseline.precision || 0], ['Recall', metrics.recall || 0, baseline.recall || 0], ['F1', metrics.f1 || 0, baseline.f1 || 0]];
+      baselineChart.innerHTML = `<div class="grouped-metric-legend"><span><i class="legend-swatch model"></i>ScamShield</span><span><i class="legend-swatch baseline"></i>TF-IDF-only baseline</span></div>${rows.map(([label, value, base]) => `<div class="grouped-metric-row"><b>${label}</b><div class="grouped-track"><span class="grouped-fill model" style="width:${Math.round(value * 100)}%"></span><span class="grouped-fill baseline" style="width:${Math.round(base * 100)}%"></span></div><small>${Math.round(value * 100)}% / ${Math.round(base * 100)}%</small></div>`).join('')}<p class="baseline-method">${escapeHtml(baseline.method || evaluation.baseline_status || '')}</p>`;
+    } else {
+      baselineChart.innerHTML = `<div class="pending-icon" aria-hidden="true">—</div><strong>Baseline comparison pending</strong><p>${escapeHtml(evaluation.baseline_status || 'No independently measured baseline is available for this split.')}</p>`;
+    }
+  }
 }
 
 function renderBars(id, values, compact = false) {

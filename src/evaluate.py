@@ -17,11 +17,13 @@ def evaluate(train_path: Path, test_path: Path) -> dict:
         rows = list(csv.DictReader(handle))
     y_true = [int(row["label"] == "phishing") for row in rows]
     y_pred = []
+    baseline_pred = []
     records = []
     for row in rows:
         result = explain(row["text"], model.predict_probability(row["text"]), model)
         prediction = int(result["risk_score"] >= 0.35)
         y_pred.append(prediction)
+        baseline_pred.append(int(model.predict_probability(row["text"]) >= 0.5))
         records.append({"scenario": row["scenario"], "label": row["label"], "prediction": prediction, "risk_score": result["risk_score"]})
     tp = sum(a == b == 1 for a, b in zip(y_true, y_pred))
     tn = sum(a == b == 0 for a, b in zip(y_true, y_pred))
@@ -30,12 +32,20 @@ def evaluate(train_path: Path, test_path: Path) -> dict:
     precision = tp / (tp + fp) if tp + fp else 0.0
     recall = tp / (tp + fn) if tp + fn else 0.0
     f1 = 2 * precision * recall / (precision + recall) if precision + recall else 0.0
+    btp = sum(a == b == 1 for a, b in zip(y_true, baseline_pred))
+    btn = sum(a == b == 0 for a, b in zip(y_true, baseline_pred))
+    bfp = sum(a == 0 and b == 1 for a, b in zip(y_true, baseline_pred))
+    bfn = sum(a == 1 and b == 0 for a, b in zip(y_true, baseline_pred))
+    bprecision = btp / (btp + bfp) if btp + bfp else 0.0
+    brecall = btp / (btp + bfn) if btp + bfn else 0.0
+    bf1 = 2 * bprecision * brecall / (bprecision + brecall) if bprecision + brecall else 0.0
     return {
         "dataset": {"train": str(train_path), "test": str(test_path), "test_rows": len(rows), "class_distribution": dict(Counter(row["label"] for row in rows))},
         "evaluation_date": date.today().isoformat(),
         "model_version": "contextual-baseline-v3",
         "metrics": {"precision": round(precision, 3), "recall": round(recall, 3), "f1": round(f1, 3), "false_positives": fp, "missed_scams": fn, "confusion_matrix": {"true_negative": tn, "false_positive": fp, "false_negative": fn, "true_positive": tp}},
         "records": records,
+        "baseline_metrics": {"precision": round(bprecision, 3), "recall": round(brecall, 3), "f1": round(bf1, 3), "confusion_matrix": {"true_negative": btn, "false_positive": bfp, "false_negative": bfn, "true_positive": btp}, "method": "TF-IDF-only score at threshold 0.5"},
         "limitations": ["Small, hand-curated development and held-out sets are not representative of real-world prevalence.", "The screening score is not calibrated probability.", "No domain reputation or live URL verification is performed."],
     }
 
