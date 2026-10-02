@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import mimetypes
 import os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -51,12 +52,32 @@ class Handler(BaseHTTPRequestHandler):
         elif path.startswith("/static/"):
             file = WEB / "static" / path.removeprefix("/static/")
             if file.exists() and file.is_file():
-                content_type = "text/css; charset=utf-8" if file.suffix == ".css" else "application/javascript; charset=utf-8"
+                guessed = mimetypes.guess_type(file.name)[0] or "application/octet-stream"
+                content_type = f"{guessed}; charset=utf-8" if guessed.startswith(("text/", "application/javascript")) else guessed
                 self._send(200, content_type, file.read_bytes())
             else:
                 self._send(404, "text/plain", b"Not found")
         else:
             self._send(404, "text/plain", b"Not found")
+
+    def do_HEAD(self) -> None:
+        """Support platform health checks without returning a misleading 501."""
+        path = urlparse(self.path).path
+        if path in ("/", "/index.html"):
+            file = WEB / "index.html"
+        elif path.startswith("/static/"):
+            file = WEB / "static" / path.removeprefix("/static/")
+        else:
+            file = None
+        if file and file.exists() and file.is_file():
+            guessed = mimetypes.guess_type(file.name)[0] or "application/octet-stream"
+            self.send_response(200)
+            self.send_header("Content-Type", guessed)
+            self.send_header("Content-Length", str(file.stat().st_size))
+            self.end_headers()
+        else:
+            self.send_response(404)
+            self.end_headers()
 
     def do_POST(self) -> None:
         if urlparse(self.path).path != "/api/analyse":
