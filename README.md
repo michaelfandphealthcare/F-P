@@ -2,6 +2,8 @@
 
 ScamShield is a final-year computer science project exploring whether an explainable text-classification system can help non-technical users recognise phishing and scam messages, including messages rewritten to sound more convincing.
 
+For a clean first explanation of the project, see [`docs/project_overview.md`](docs/project_overview.md) and the assessor-facing [Project Overview document](outputs/ScamShield_Project_Overview_Updated.docx).
+
 ## Project boundary
 
 This is a controlled academic prototype. It analyses pasted fictional or public message text only. It does not connect to email accounts, send messages, visit links, make financial decisions or replace human judgement.
@@ -11,6 +13,8 @@ This is a controlled academic prototype. It analyses pasted fictional or public 
 The current vertical slice uses a transparent TF-IDF-style classifier implemented with Python and NumPy, together with a contextual rule layer. The rules look for phrases that combine an action with a credential, payment, link, urgency or trusted-service reference. Negated advice such as “never share your password” and quoted scam examples are treated as awareness content rather than requests. Explanations quote the observed phrase and state what it means; the score is a screening signal, not calibrated probability.
 
 The interface also includes a research dashboard and a multimodal evidence lab. The evidence lab previews redacted screenshots locally and records transparent human annotations for visible warning signs. Its evidence cards link to public UK sources, while its charts are explicitly labelled synthetic demonstration data or official context. This prevents the project from presenting fictional test scenarios as claims about real banks, universities, football clubs or other named organisations. See `docs/data_provenance.md` and `docs/multimodal_evidence_method.md`.
+
+The current interface is published at https://scamshield-dahk.onrender.com/.
 
 ## Run locally
 
