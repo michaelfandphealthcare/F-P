@@ -24,9 +24,14 @@
   filter: none !important;
 }
 .scenario-brand {
-  background: rgba(248, 252, 252, 0.96) !important;
-  border-color: rgba(255, 255, 255, 0.82) !important;
-  box-shadow: 0 8px 20px rgba(2, 12, 28, 0.24) !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+.scenario-brand img[src*="lloyds-bank.svg"],
+.scenario-brand img[src*="leeds-beckett.svg"] {
+  filter: brightness(0) invert(1) !important;
 }
 .scenario-brand img[src*="lloyds-bank.svg"],
 .scenario-brand img[src*="leeds-beckett.svg"] {
