@@ -26,6 +26,11 @@ document.querySelectorAll('.nav-btn').forEach(btn => btn.addEventListener('click
   if (dashboard) loadDashboard();
 }));
 
+document.querySelectorAll('[data-scroll="workspace"]').forEach(btn => btn.addEventListener('click', () => {
+  document.querySelector('.workspace')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.getElementById('message')?.focus({ preventScroll: true });
+}));
+
 async function loadDashboard() {
   if (dashboardLoaded) return;
   try {
