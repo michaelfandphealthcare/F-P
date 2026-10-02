@@ -8,8 +8,12 @@ const imageInput = document.getElementById('imageInput');
 const annotationChecks = document.querySelectorAll('.annotation-check');
 const ocrBtn = document.getElementById('ocrBtn');
 const useOcrBtn = document.getElementById('useOcrBtn');
+const visualExampleBtn = document.getElementById('visualExampleBtn');
 let selectedImageData = null;
 let extractedText = '';
+let demoExamples = [];
+
+fetch('/data/demo_examples.json').then(response => response.ok ? response.json() : []).then(items => { demoExamples = items; }).catch(() => {});
 
 let dashboardLoaded = false;
 const homeData = [['Bank impersonation',34],['Delivery / tax',28],['University account',19],['Sports / ticketing',17]];
@@ -145,9 +149,25 @@ function renderBars(id, values, compact = false) {
 
 message.addEventListener('input', () => { counter.textContent = `${message.value.length} / 4000`; });
 exampleBtn.addEventListener('click', () => {
-  message.value = 'Urgent: your account will be suspended today. Confirm your password and payment details using the link below to keep access.';
+  const item = demoExamples.length ? demoExamples[Math.floor(Math.random() * demoExamples.length)] : { text: 'Urgent: your account will be suspended today. Confirm your password and payment details using the link below to keep access.' };
+  message.value = item.text;
   message.dispatchEvent(new Event('input'));
   message.focus();
+});
+
+visualExampleBtn?.addEventListener('click', () => {
+  if (!demoExamples.length) return;
+  const item = demoExamples[Math.floor(Math.random() * demoExamples.length)];
+  selectedImageData = `/static/assets/demo-examples/${item.asset}`;
+  extractedText = '';
+  document.getElementById('imagePreview').innerHTML = `<img src="${selectedImageData}" alt="Synthetic ${escapeHtml(item.label)} ${escapeHtml(item.type)} evidence example">`;
+  document.getElementById('imageMeta').innerHTML = `<strong>${escapeHtml(item.asset)}</strong><span>${escapeHtml(item.type)} · synthetic ${escapeHtml(item.label)} sample</span>`;
+  document.getElementById('profileStatus').textContent = 'Example ready';
+  document.getElementById('visualFlags').innerHTML = `<span class="flag ${item.label === 'scam' ? 'warning' : 'positive'}">Synthetic ${escapeHtml(item.label)} example</span><span class="flag neutral">OCR ready</span><span class="flag neutral">Manual annotation available</span>`;
+  document.getElementById('ocrStatus').textContent = 'Review the visible message, then extract the text locally if required.';
+  document.getElementById('ocrText').textContent = '';
+  ocrBtn.disabled = false;
+  useOcrBtn.classList.add('hidden');
 });
 
 analyseBtn.addEventListener('click', async () => {

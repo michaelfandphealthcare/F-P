@@ -99,8 +99,9 @@
       <div class="lab-grid">
         <div class="upload-card panel">
           <div class="chart-head"><div><span class="eyebrow">Step 01 · visual evidence</span><h2>Upload a scam screenshot</h2><p>Use an email, SMS or login-page screenshot. Never upload passwords, bank details or private messages.</p></div><span class="chart-tag teal">Local preview</span></div>
-          <label class="dropzone" for="imageInput"><input id="imageInput" type="file" accept="image/png,image/jpeg,image/webp"><span class="drop-icon">＋</span><strong>Choose an image</strong><small>PNG, JPG or WebP · maximum 8 MB</small></label>
+          <label class="dropzone" for="imageInput"><input id="imageInput" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml"><span class="drop-icon">＋</span><strong>Choose an image</strong><small>PNG, JPG, WebP or synthetic SVG · maximum 8 MB</small></label>
           <div id="imageMeta" class="image-meta empty-meta">No image selected yet.</div>
+          <button id="visualExampleBtn" class="secondary visual-example-btn" type="button">Try a visual example ↗</button>
         </div>
         <div class="preview-card panel"><div class="chart-head"><div><span class="eyebrow">Step 02 · transparent conversion</span><h2>Visual profile</h2><p>Preview the image, extract only visible text, then review it before analysis.</p></div><span id="profileStatus" class="chart-tag">Waiting</span></div><div id="imagePreview" class="image-preview"><div class="preview-placeholder">Your redacted email, SMS or login-page screenshot will appear here.</div></div><div id="visualFlags" class="visual-flags"><span>Awaiting screenshot</span></div><button id="ocrBtn" class="secondary ocr-btn" disabled>Extract visible text</button><div id="ocrStatus" class="ocr-status"></div><pre id="ocrText" class="ocr-text"></pre><button id="useOcrBtn" class="primary ocr-use hidden">Analyse extracted text <span aria-hidden="true">→</span></button></div>
       </div>

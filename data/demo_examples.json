@@ -1,0 +1,22 @@
+[
+  {"asset":"sms-bank-scam.svg","label":"scam","type":"SMS · BANK","text":"Urgent: unusual activity detected. Verify your account now at secure-check.example","action":"TAP TO VERIFY"},
+  {"asset":"sms-parcel-scam.svg","label":"scam","type":"SMS · DELIVERY","text":"Your parcel is waiting. Pay £1.99 delivery fee to release it today.","action":"OPEN PAYMENT LINK"},
+  {"asset":"sms-university-scam.svg","label":"scam","type":"SMS · UNIVERSITY","text":"Your student account will close today. Confirm your password immediately.","action":"SIGN IN NOW"},
+  {"asset":"sms-ticket-scam.svg","label":"scam","type":"SMS · TICKETING","text":"Your match ticket is reserved. Send payment within 10 minutes to secure it.","action":"PAY NOW"},
+  {"asset":"sms-nhs-scam.svg","label":"scam","type":"SMS · HEALTHCARE","text":"Confirm your appointment details and pay the outstanding prescription charge.","action":"CONFIRM DETAILS"},
+  {"asset":"email-tax-scam.svg","label":"scam","type":"EMAIL · TAX","text":"Final warning: your refund cannot be processed until you confirm your bank details.","action":"CLAIM REFUND"},
+  {"asset":"email-reward-scam.svg","label":"scam","type":"EMAIL · REWARD","text":"Congratulations! £50 cashback is waiting. Tap the link to claim your reward.","action":"CLAIM REWARD"},
+  {"asset":"login-cloud-scam.svg","label":"scam","type":"LOGIN · ACCOUNT","text":"Your session expired. Enter your password and one-time code to restore access.","action":"CONTINUE"},
+  {"asset":"email-invoice-scam.svg","label":"scam","type":"EMAIL · PAYMENT","text":"An invoice is overdue. Open the attachment and pay today to avoid legal action.","action":"VIEW INVOICE"},
+  {"asset":"qr-parking-scam.svg","label":"scam","type":"QR · PARKING","text":"Your parking session has expired. Scan this QR code to avoid a penalty.","action":"SCAN QR CODE"},
+  {"asset":"sms-bank-safe.svg","label":"legitimate","type":"SMS · BANK","text":"Your monthly statement is ready. View it safely in your usual banking app.","action":"OPEN BANKING APP"},
+  {"asset":"sms-parcel-safe.svg","label":"legitimate","type":"SMS · DELIVERY","text":"Your parcel was delivered to reception at 14:20. No action is required.","action":"DELIVERED"},
+  {"asset":"sms-university-safe.svg","label":"legitimate","type":"SMS · UNIVERSITY","text":"Reminder: coursework submission closes Friday at 16:00. Use the usual learning platform.","action":"VIEW TIMETABLE"},
+  {"asset":"sms-ticket-safe.svg","label":"legitimate","type":"SMS · TICKETING","text":"Your official ticket is available in the club app. Do not share your ticket code.","action":"OPEN OFFICIAL APP"},
+  {"asset":"sms-nhs-safe.svg","label":"legitimate","type":"SMS · HEALTHCARE","text":"Appointment reminder: Tuesday 10:30 at the clinic. Call the number on your letter to change it.","action":"APPOINTMENT REMINDER"},
+  {"asset":"email-tax-safe.svg","label":"legitimate","type":"EMAIL · TAX","text":"Your tax account notice is ready. Sign in by typing the official website into your browser.","action":"VIEW NOTICE SAFELY"},
+  {"asset":"email-receipt-safe.svg","label":"legitimate","type":"EMAIL · RECEIPT","text":"Thank you for your purchase. Your receipt is available in your account order history.","action":"VIEW ORDER HISTORY"},
+  {"asset":"login-cloud-safe.svg","label":"legitimate","type":"LOGIN · ACCOUNT","text":"Sign in through your saved bookmark. We will never ask for a one-time code by email.","action":"USE SAVED BOOKMARK"},
+  {"asset":"email-invoice-safe.svg","label":"legitimate","type":"EMAIL · INVOICE","text":"Your monthly invoice is available in the supplier portal. Contact finance using the known address.","action":"OPEN PORTAL DIRECTLY"},
+  {"asset":"qr-parking-safe.svg","label":"legitimate","type":"QR · PARKING","text":"Parking receipt: zone A, valid until 18:00. Keep this confirmation for your records.","action":"RECEIPT CONFIRMED"}
+]

@@ -57,6 +57,12 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, content_type, file.read_bytes())
             else:
                 self._send(404, "text/plain", b"Not found")
+        elif path.startswith("/data/"):
+            file = ROOT / "data" / path.removeprefix("/data/")
+            if file.exists() and file.is_file() and file.suffix == ".json":
+                self._send(200, "application/json; charset=utf-8", file.read_bytes())
+            else:
+                self._send(404, "text/plain", b"Not found")
         else:
             self._send(404, "text/plain", b"Not found")
 
