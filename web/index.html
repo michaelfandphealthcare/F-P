@@ -4,20 +4,27 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ScamShield | A calmer second opinion</title>
+  <link rel="icon" href="/static/logo.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/static/styles.css">
   <link rel="stylesheet" href="/static/dashboard.css">
+  <link rel="stylesheet" href="/static/pro.css">
 </head>
 <body>
   <header class="topbar">
-    <div class="brand"><span class="brand-mark">S</span><span>ScamShield</span></div>
-    <nav class="nav"><button class="nav-btn active" data-view="scanner">Scanner</button><button class="nav-btn" data-view="evidence">Evidence lab</button><button class="nav-btn" data-view="dashboard">Research dashboard</button><span class="prototype-pill">Research prototype</span></nav>
+    <div class="brand"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 40 40" role="img"><path d="M20 3.5 34 8.7v9.8c0 8.7-5.7 15.2-14 18-8.3-2.8-14-9.3-14-18V8.7L20 3.5Z" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="m12.7 20.2 4.7 4.7 10-10" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/></svg></span><span class="brand-copy"><strong>ScamShield</strong><small>Fraud intelligence workspace</small></span></div>
+    <div class="workspace-crumb"><span class="crumb-dot"></span> Academic research <b>/</b> Scam prevention</div>
+    <nav class="nav"><button class="nav-btn active" data-view="scanner">Scanner</button><button class="nav-btn" data-view="evidence">Evidence lab</button><button class="nav-btn" data-view="dashboard">Research dashboard</button><span class="system-status"><i></i> System online</span><span class="prototype-pill">v1.0 research build</span></nav>
   </header>
   <main class="shell">
     <section class="hero view scanner-view">
-      <div class="eyebrow">A calmer second opinion</div>
-      <h1>Could this message be a scam?</h1>
-      <p>Paste a message below. ScamShield will look for warning signs, explain them in plain English and suggest a safer next step.</p>
+      <div class="hero-copy"><div class="hero-kicker"><span class="live-dot"></span> Live research prototype <b>/</b> Evidence-led analysis</div>
+        <h1>See the signal<br><em>before the loss.</em></h1>
+        <p>ScamShield turns suspicious messages into a clear, explainable decision aid—so people can pause, understand the warning signs and choose a safer next step.</p>
+        <div class="hero-actions"><button class="hero-cta" data-scroll="workspace">Start an analysis <span>→</span></button><span>Local preview · no inbox connection</span></div>
+      </div>
+      <aside class="hero-insight"><div class="insight-label"><span>Research focus</span><span class="insight-index">01</span></div><strong>Make digital trust easier to inspect.</strong><p>Built for messages that imitate banks, universities, sports organisations and healthcare services.</p><div class="insight-metrics"><div><b>4</b><span>target sectors</span></div><div><b>3</b><span>review stages</span></div><div><b>0</b><span>real accounts linked</span></div></div></aside>
     </section>
+    <div class="workflow-strip scanner-view" aria-label="Analysis workflow"><div class="workflow-step active"><span>01</span><div><strong>Paste evidence</strong><small>Message or screenshot</small></div></div><div class="workflow-line"></div><div class="workflow-step"><span>02</span><div><strong>Analyse signals</strong><small>Explainable warning signs</small></div></div><div class="workflow-line"></div><div class="workflow-step"><span>03</span><div><strong>Review safely</strong><small>Human decision support</small></div></div></div>
     <section class="sector-visuals view scanner-view">
       <div class="section-kicker"><div><span class="eyebrow">The problem spans every trusted service</span><h2>One threat. Four high-value targets.</h2></div><span class="context-label">Context imagery · not incident evidence</span></div>
       <div class="sector-visual-grid">
