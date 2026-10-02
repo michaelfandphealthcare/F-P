@@ -176,7 +176,7 @@ annotationChecks.forEach(check => check.addEventListener('change', () => {
   const result = document.getElementById('annotationResult');
   const level = score >= 8 ? 'High visual-risk signal' : score >= 4 ? 'Needs human review' : 'Low visual-risk signal';
   const names = selected.map(x => x.parentElement.textContent.trim());
-  result.innerHTML = `<strong>${level}</strong><span>${selected.length ? `Recorded signals: ${escapeHtml(names.join(', '))}.` : 'No visible warning features have been selected.'}</span><small>This is a transparent annotation, not proof of fraud. The dissertation should compare these human labels with the model output.</small>`;
+  result.innerHTML = `<strong>${level}</strong><span>${selected.length ? `Recorded signals: ${escapeHtml(names.join(', '))}.` : 'No visible warning features have been selected.'}</span><small>This is a transparent annotation, not proof of fraud. Compare these human labels with the model output during evaluation.</small>`;
 }));
 
 function renderEvidence(items) {
@@ -198,6 +198,8 @@ function renderBars(id, values, compact = false) {
   const root = document.getElementById(id);
   if (!root || root.dataset.ready) return;
   const max = Math.max(...values.map(x => x[1]));
+  root.setAttribute('role', 'list');
+  root.setAttribute('aria-label', 'Chart data: ' + values.map(([label, value]) => `${label}, ${value}`).join('; '));
   root.innerHTML = values.map(([label, value]) => {
     const display = compact && value >= 1000000 ? `${(value / 1000000).toFixed(1)}m` : compact && value >= 1000 ? `${Math.round(value / 1000)}k` : value;
     return `<div class="bar-row"><span class="bar-label">${escapeHtml(label)}</span><span class="bar-track"><span class="bar-fill" style="width:${Math.round(value/max*100)}%"></span></span><span class="bar-value">${display}</span></div>`;
