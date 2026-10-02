@@ -1,0 +1,6 @@
+.scenario-brand img{display:block;height:26px;width:auto;max-width:148px;object-fit:contain;background:#fff;border-radius:5px;padding:2px;filter:none}
+.scenario-brand .bank-brand img,.bank-brand img{width:112px}.scenario-brand .uni-brand img,.uni-brand img{width:136px}.scenario-brand .sport-brand img,.sport-brand img,.scenario-brand .health-brand img,.health-brand img{width:58px}
+.case-icon,.source-thumb{display:grid;place-items:center;background:#fff!important;overflow:hidden}.case-icon img{width:100%;height:100%;padding:5px;object-fit:contain}.source-thumb img{width:100%;height:100%;padding:5px;object-fit:contain}
+.case-icon img[src*="lloyds-bank.svg"],.source-thumb img[src*="lloyds-bank.svg"]{content:url('/static/assets/logos/lloyds-bank-mark.svg')}.case-icon img[src*="leeds-beckett.svg"],.source-thumb img[src*="leeds-beckett.svg"]{content:url('/static/assets/logos/leeds-beckett-mark.svg')}
+.case-icon.bank,.source-thumb.bank-thumb{background:#e9f5ef!important}.case-icon.uni,.source-thumb.uni-thumb{background:#eef9f5!important}
+@media(max-width:800px){.scenario-brand img{height:22px}.scenario-brand .bank-brand img,.bank-brand img{width:94px}.scenario-brand .uni-brand img,.uni-brand img{width:112px}}
