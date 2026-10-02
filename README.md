@@ -55,6 +55,6 @@ python3 -m venv .venv
 .venv/bin/python -m unittest -v tests.test_core tests.test_dashboard tests.test_evaluation
 ```
 
-The checked-in result is `data/evaluation_results.json`. It contains a small, hand-curated held-out set and must not be presented as real-world accuracy. The current test run reports precision 1.000, recall 0.800 and F1 0.889, with 1 missed scam; the limitations are shown in the Research dashboard.
+The checked-in result is `data/evaluation_results.json`. It contains a small, hand-curated held-out set and must not be presented as real-world accuracy. The current reproducible run reports precision 0.500, recall 1.000 and F1 0.667, with 5 false alarms and 0 missed scams; the limitations are shown in the Research dashboard.
 
 The current rules build is `contextual-baseline-v3`. Run the regression suite before publishing; it covers helpdesk authentication-code requests, protective security advice, complete monetary amounts and the existing scam/legitimate cases.

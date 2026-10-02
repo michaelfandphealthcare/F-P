@@ -26,7 +26,7 @@ The current implementation uses a contextual baseline combining TF-IDF-style fea
 
 ## Evidence and evaluation
 
-The current held-out result uses 12 messages: 7 legitimate and 5 phishing. It reports precision 1.000, recall 0.800, F1 0.889, zero false positives and one missed scam. This is a small hand-curated test run, not evidence of general-world accuracy. The final evaluation should expand the versioned dataset, freeze the test split before tuning, include AI-rewritten variants, record failure cases and assess explanation quality. The current rules build is `contextual-baseline-v3`; its additional regression tests cover authentication-code disclosure, support impersonation, protective advice and complete monetary amounts.
+The current held-out result uses 12 messages: 7 legitimate and 5 phishing. It reports precision 0.500, recall 1.000, F1 0.667, five false alarms and zero missed scams. This is a small hand-curated test run, not evidence of general-world accuracy. The final evaluation should expand the versioned dataset, freeze the test split before tuning, include AI-rewritten variants, record failure cases and assess explanation quality. The current rules build is `contextual-baseline-v3`; its additional regression tests cover authentication-code disclosure, support impersonation, protective advice and complete monetary amounts.
 
 Public figures in the dashboard are source-linked context. Synthetic scenario bars are clearly labelled and are not national crime statistics or claims that a named organisation was breached.
 
