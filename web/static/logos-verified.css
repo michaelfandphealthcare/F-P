@@ -42,7 +42,9 @@
   gap: 0 !important;
   white-space: nowrap;
 }
-.scenario-brand.bank-brand img[src*="lloyds-bank-official.png"] { filter: none !important; }
+.scenario-brand.bank-brand img[src*="lloyds-bank-official.png"] {
+  filter: brightness(0) invert(1) drop-shadow(0 0 5px rgba(255,255,255,.18)) !important;
+}
 .scenario-brand img[src*="lloyds-bank.svg"],
 .scenario-brand img[src*="leeds-beckett.svg"] {
   background: transparent !important;
