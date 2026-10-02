@@ -12,6 +12,7 @@ const closeLightbox = document.getElementById('closeLightbox');
 const annotationChecks = document.querySelectorAll('.annotation-check');
 const ocrBtn = document.getElementById('ocrBtn');
 const useOcrBtn = document.getElementById('useOcrBtn');
+const visualResult = document.getElementById('visualResult');
 const visualExampleBtn = document.getElementById('visualExampleBtn');
 let selectedImageData = null;
 let extractedText = '';
@@ -76,6 +77,7 @@ if (imageInput) imageInput.addEventListener('change', () => {
   const file = imageInput.files[0];
   if (!file) return;
   selectedExampleText = '';
+  visualResult?.classList.add('hidden');
   if (file.size > 8 * 1024 * 1024) {
     document.getElementById('imageMeta').textContent = 'Image is larger than 8 MB. Choose a smaller redacted sample.';
     return;
@@ -143,12 +145,19 @@ if (ocrBtn) ocrBtn.addEventListener('click', async () => {
   } finally { ocrBtn.disabled = false; }
 });
 
-if (useOcrBtn) useOcrBtn.addEventListener('click', () => {
+if (useOcrBtn) useOcrBtn.addEventListener('click', async () => {
   if (!extractedText) return;
-  message.value = extractedText;
-  message.dispatchEvent(new Event('input'));
-  document.querySelector('.nav-btn[data-view="scanner"]').click();
-  analyseBtn.click();
+  useOcrBtn.disabled = true;
+  useOcrBtn.textContent = 'Analysing image evidence...';
+  try {
+    const response = await fetch('/api/analyse', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({text: extractedText}) });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Unable to analyse the extracted evidence.');
+    const reasons = data.reasons.map(reason => `<li><span>✓</span>${escapeHtml(reason)}</li>`).join('');
+    visualResult.innerHTML = `<div class="visual-result-head"><div><span class="eyebrow">Image evidence result</span><h3>${escapeHtml(data.label)}</h3><span class="band">${escapeHtml(data.band)}</span></div><strong>${Math.round(data.probability * 100)}%<small>risk signal</small></strong></div><h4>Why it was flagged</h4><ul>${reasons}</ul><h4>Safer next step</h4><p class="visual-action">${escapeHtml(data.action)}</p><small class="visual-boundary">This result is based on visible text from the selected image and is not proof of fraud.</small>`;
+    visualResult.classList.remove('hidden');
+  } catch (err) { document.getElementById('ocrStatus').textContent = err.message; }
+  finally { useOcrBtn.disabled = false; useOcrBtn.innerHTML = 'Analyse image evidence <span aria-hidden="true">→</span>'; }
 });
 
 annotationChecks.forEach(check => check.addEventListener('change', () => {
@@ -193,6 +202,7 @@ visualExampleBtn?.addEventListener('click', () => {
   selectedImageData = `/static/assets/demo-examples/${item.asset}`;
   selectedExampleText = item.text;
   extractedText = '';
+  visualResult?.classList.add('hidden');
   document.getElementById('imagePreview').innerHTML = `<img src="${selectedImageData}" alt="Synthetic ${escapeHtml(item.label)} ${escapeHtml(item.type)} evidence example">`;
   document.getElementById('imageMeta').innerHTML = `<strong>${escapeHtml(item.asset)}</strong><span>${escapeHtml(item.type)} · synthetic ${escapeHtml(item.label)} sample</span>`;
   document.getElementById('profileStatus').textContent = 'Example ready';
