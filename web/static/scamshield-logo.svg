@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 88" role="img" aria-labelledby="title desc">
+  <title id="title">ScamShield</title>
+  <desc id="desc">ScamShield wordmark with a signal-scan lens and verified message mark.</desc>
+  <defs>
+    <linearGradient id="scan" x1="8" y1="8" x2="68" y2="72" gradientUnits="userSpaceOnUse"><stop stop-color="#8af3e6"/><stop offset="1" stop-color="#16b4a6"/></linearGradient>
+    <linearGradient id="word" x1="88" y1="20" x2="278" y2="70" gradientUnits="userSpaceOnUse"><stop stop-color="#ffffff"/><stop offset="1" stop-color="#b8e9e5"/></linearGradient>
+    <filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <g transform="translate(5 5)">
+    <circle cx="37" cy="37" r="30" fill="#09283c" stroke="url(#scan)" stroke-width="3"/>
+    <path d="M22 27v-7h7M52 20h7v7M59 47v7h-7M29 54h-7v-7" fill="none" stroke="#76eee0" stroke-width="3" stroke-linecap="round"/>
+    <path d="M21 39c5-8 11-12 18-12 8 0 14 4 19 12-5 8-11 12-19 12-7 0-13-4-18-12Z" fill="none" stroke="#dffefa" stroke-width="2.4" opacity=".9"/>
+    <circle cx="39" cy="39" r="7" fill="none" stroke="#55ddd0" stroke-width="3" filter="url(#softGlow)"/>
+    <path d="m27 39 7 7 16-17" fill="none" stroke="#fff" stroke-width="3.7" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="18" cy="39" r="2.5" fill="#f5c66b"/><circle cx="61" cy="39" r="2.5" fill="#f5c66b"/>
+  </g>
+  <g font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">
+    <text x="86" y="43" fill="url(#word)" font-size="31" font-weight="850" letter-spacing="-1.2">ScamShield</text>
+    <text x="89" y="65" fill="#79dacf" font-size="9.5" font-weight="800" letter-spacing="2.1">TRUST INTELLIGENCE WORKSPACE</text>
+  </g>
+</svg>
