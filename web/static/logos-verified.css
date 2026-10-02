@@ -2,7 +2,7 @@
 .scenario-brand img[src*="lloyds-bank-official.png"],
 .scenario-brand img[src*="lloyds-bank.svg"] {
   content: none !important;
-  width: 86px !important;
+  width: 90px !important;
   height: 44px !important;
   object-fit: contain !important;
   display: block !important;
