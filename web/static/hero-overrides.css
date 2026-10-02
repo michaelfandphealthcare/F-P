@@ -1,8 +1,10 @@
 /* Keep the editorial hero image visibly present behind the research copy. */
 .hero{background-image:linear-gradient(90deg,rgba(5,20,32,.78) 0%,rgba(7,27,43,.52) 46%,rgba(7,27,43,.16) 100%),url('/static/assets/analyst-hero.png');background-position:center;background-size:cover;animation:heroDrift 20s ease-in-out infinite alternate}
+.hero-visual-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;z-index:0;opacity:.48;mix-blend-mode:screen;filter:saturate(.9) contrast(1.08);animation:heroImageDrift 20s ease-in-out infinite alternate;pointer-events:none}
 .hero:after{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:radial-gradient(circle at 78% 35%,rgba(81,225,205,.2),transparent 32%),linear-gradient(115deg,transparent 20%,rgba(109,231,217,.08) 50%,transparent 80%);mix-blend-mode:screen;animation:heroSheen 12s ease-in-out infinite}
 .hero-copy,.hero-insight{z-index:1}
 @keyframes heroSheen{0%,100%{opacity:.25;transform:translateX(-2%)}50%{opacity:.8;transform:translateX(2%)}}
+@keyframes heroImageDrift{0%{transform:scale(1.02) translate3d(-1%,0,0)}100%{transform:scale(1.08) translate3d(1%, -1%,0)}}
 
 /* Consistent visual language for every research view. */
 .sector-visual,.chart-card,.evidence-card,.case-library,.upload-card,.preview-card,.annotation-card{border:1px solid rgba(113,190,194,.2);box-shadow:0 18px 48px rgba(1,13,26,.18)}
