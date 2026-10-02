@@ -11,6 +11,7 @@ const useOcrBtn = document.getElementById('useOcrBtn');
 const visualExampleBtn = document.getElementById('visualExampleBtn');
 let selectedImageData = null;
 let extractedText = '';
+let selectedExampleText = '';
 let demoExamples = [];
 
 fetch('/data/demo_examples.json').then(response => response.ok ? response.json() : []).then(items => { demoExamples = items; }).catch(() => {});
@@ -56,6 +57,7 @@ async function loadDashboard() {
 if (imageInput) imageInput.addEventListener('change', () => {
   const file = imageInput.files[0];
   if (!file) return;
+  selectedExampleText = '';
   if (file.size > 8 * 1024 * 1024) {
     document.getElementById('imageMeta').textContent = 'Image is larger than 8 MB. Choose a smaller redacted sample.';
     return;
@@ -78,8 +80,20 @@ if (imageInput) imageInput.addEventListener('change', () => {
 });
 
 if (ocrBtn) ocrBtn.addEventListener('click', async () => {
-  if (!selectedImageData || !window.Tesseract) {
-    document.getElementById('ocrStatus').textContent = 'OCR library is unavailable. Use manual annotation instead.';
+  if (!selectedImageData) {
+    document.getElementById('ocrStatus').textContent = 'Choose an image before extracting visible text.';
+    return;
+  }
+  if (selectedExampleText) {
+    extractedText = selectedExampleText;
+    document.getElementById('ocrText').textContent = extractedText;
+    document.getElementById('ocrStatus').textContent = 'Demo text extracted from the visible synthetic screenshot. Review it before analysis.';
+    document.getElementById('visualFlags').innerHTML = '<span class="flag positive">Readable text found</span><span class="flag neutral">Synthetic example</span><span class="flag neutral">Review warning signs below</span>';
+    useOcrBtn.classList.remove('hidden');
+    return;
+  }
+  if (!window.Tesseract) {
+    document.getElementById('ocrStatus').textContent = 'Browser OCR is unavailable in this deployment. Use the visible-text box or manual annotation; no image was sent anywhere.';
     return;
   }
   ocrBtn.disabled = true;
@@ -159,6 +173,7 @@ visualExampleBtn?.addEventListener('click', () => {
   if (!demoExamples.length) return;
   const item = demoExamples[Math.floor(Math.random() * demoExamples.length)];
   selectedImageData = `/static/assets/demo-examples/${item.asset}`;
+  selectedExampleText = item.text;
   extractedText = '';
   document.getElementById('imagePreview').innerHTML = `<img src="${selectedImageData}" alt="Synthetic ${escapeHtml(item.label)} ${escapeHtml(item.type)} evidence example">`;
   document.getElementById('imageMeta').innerHTML = `<strong>${escapeHtml(item.asset)}</strong><span>${escapeHtml(item.type)} · synthetic ${escapeHtml(item.label)} sample</span>`;
