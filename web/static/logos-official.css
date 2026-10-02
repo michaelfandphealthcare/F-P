@@ -1,0 +1,5 @@
+/* Supplied official marks: keep the wordmarks readable in every card. */
+.scenario-brand img[src*="lloyds-bank.svg"]{content:url('/static/assets/logos/lloyds-bank-official.png');width:112px;height:38px;object-fit:contain;background:#fff;padding:2px;border-radius:5px}
+.scenario-brand img[src*="leeds-beckett.svg"]{content:url('/static/assets/logos/leeds-beckett-official.png');width:136px;height:38px;object-fit:contain;background:#fff;padding:2px;border-radius:5px}
+.case-icon img[src*="lloyds-bank.svg"],.case-icon img[src*="leeds-beckett.svg"]{width:100%;height:100%;padding:3px;object-fit:cover;object-position:left center;background:#fff}
+.source-thumb img[src*="lloyds-bank.svg"],.source-thumb img[src*="leeds-beckett.svg"]{width:100%;height:100%;padding:3px;object-fit:cover;object-position:left center;background:#fff}
