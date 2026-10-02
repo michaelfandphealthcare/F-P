@@ -1,0 +1,54 @@
+/* Official artwork layer for the fictional research-scenario cards. */
+.scenario-brand img[src*="lloyds-bank.svg"] {
+  content: url('/static/assets/logos/lloyds-bank-official.png') !important;
+  width: 148px !important;
+  height: 42px !important;
+  object-fit: contain !important;
+  background: transparent !important;
+  filter: none !important;
+}
+.scenario-brand img[src*="leeds-beckett.svg"] {
+  content: url('/static/assets/logos/leeds-beckett-official.svg') !important;
+  width: 164px !important;
+  height: 42px !important;
+  object-fit: contain !important;
+  background: transparent !important;
+  filter: none !important;
+}
+.scenario-brand img[src*="premier-league.svg"],
+.scenario-brand img[src*="nhs.svg"] {
+  width: 74px !important;
+  height: 32px !important;
+  object-fit: contain !important;
+  background: transparent !important;
+  filter: none !important;
+}
+.scenario-brand {
+  background: rgba(248, 252, 252, 0.96) !important;
+  border-color: rgba(255, 255, 255, 0.82) !important;
+  box-shadow: 0 8px 20px rgba(2, 12, 28, 0.24) !important;
+}
+.scenario-brand img[src*="lloyds-bank.svg"],
+.scenario-brand img[src*="leeds-beckett.svg"] {
+  background: transparent !important;
+}
+.case-icon img[src*="lloyds-bank.svg"],
+.source-thumb img[src*="lloyds-bank.svg"] {
+  content: url('/static/assets/logos/lloyds-bank-official.png') !important;
+  object-fit: contain !important;
+  background: transparent !important;
+}
+.case-icon img[src*="leeds-beckett.svg"],
+.source-thumb img[src*="leeds-beckett.svg"] {
+  content: url('/static/assets/logos/leeds-beckett-official.svg') !important;
+  object-fit: contain !important;
+  background: transparent !important;
+  filter: none !important;
+}
+.case-icon img[src*="premier-league.svg"],
+.source-thumb img[src*="premier-league.svg"],
+.case-icon img[src*="nhs.svg"],
+.source-thumb img[src*="nhs.svg"] {
+  object-fit: contain !important;
+  background: transparent !important;
+}
