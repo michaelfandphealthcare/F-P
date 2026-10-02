@@ -24,8 +24,12 @@
       <aside class="hero-insight"><div class="insight-label"><span>Research focus</span><span class="insight-index">01</span></div><strong>Make digital trust easier to inspect.</strong><p>Built for messages that imitate banks, universities, sports organisations and healthcare services.</p><div class="insight-metrics"><div><b>4</b><span>target sectors</span></div><div><b>3</b><span>review stages</span></div><div><b>0</b><span>real accounts linked</span></div></div></aside>
     </section>    <section class="fraud-path view scanner-view" aria-label="How a scam travels">
       <div class="fraud-path-head"><div><span class="eyebrow">Attack-path visualisation</span><h2>How the fraud travels.</h2><p>Follow the route from the first deceptive message to the moment ScamShield interrupts the loss.</p></div><span class="path-status"><i></i> Controlled scenario · animated</span></div>
-      <div class="fraud-path-stage">
-        <img src="/static/assets/fraud-pathway.svg" alt="Illustration of a phishing email, smishing text, spoofed login and protective shield">
+      <div class="fraud-path-stage">        <div class="fraud-scene-grid" aria-label="Animated controlled fraud sequence">
+          <article class="fraud-scene scene-phish"><div class="scene-icon">✉</div><strong>Phishing email</strong><small>Imitates a trusted sender</small><span>VERIFY NOW</span></article>
+          <article class="fraud-scene scene-smish"><div class="scene-icon">▣</div><strong>Smishing text</strong><small>Creates pressure and urgency</small><span>OPEN LINK</span></article>
+          <article class="fraud-scene scene-spoof"><div class="scene-icon">▤</div><strong>Spoofed login</strong><small>Requests credentials</small><span>CAPTURE ATTEMPT</span></article>
+          <article class="fraud-scene scene-shield"><div class="scene-icon">✓</div><strong>ScamShield intercepts</strong><small>Explains the warning signs</small><span>SAFE REVIEW</span></article>
+        </div>
         <div class="path-node node-phish"><b>01</b><span>Phishing email</span><small>Imitates trusted sender</small></div>
         <div class="path-node node-smish"><b>02</b><span>Smishing text</span><small>Creates urgency</small></div>
         <div class="path-node node-spoof"><b>03</b><span>Spoofed login</span><small>Requests credentials</small></div>
