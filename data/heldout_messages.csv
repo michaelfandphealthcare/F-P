@@ -1,0 +1,13 @@
+text,label,scenario
+"Your coach shared the training plan for Saturday. Reply if you cannot attend.",legitimate,conversation
+"Your bank statement is ready in the usual app. No action is needed.",legitimate,banking
+"The NHS appointment reminder confirms your clinic time. Call the number on your existing letter to change it.",legitimate,healthcare
+"Your university library book is due next week. Renew it through the student portal.",legitimate,university
+"Your ticket order is confirmed. The official app shows your seat and entry instructions.",legitimate,ticketing
+"Security advice: never enter your password after following an unexpected link.",legitimate,awareness
+"This is an example of a scam message asking for a one-time code. Do not reply.",legitimate,quoted-scam
+"Your Lloyds account needs a password and one-time passcode immediately at this link.",phishing,credential-theft
+"Send £850 to my new account now, I am stranded and cannot speak on the phone.",phishing,family-impersonation
+"Your NHS prescription fee is overdue. Pay £12 within 20 minutes using this link.",phishing,healthcare-payment
+"Your Leeds Beckett account will close tonight. Sign in and confirm your password.",phishing,university-impersonation
+"The match ticket is held for you, but transfer the payment within 10 minutes to avoid losing it.",phishing,ticket-deadline

@@ -20,12 +20,25 @@ import numpy as np
 
 TOKEN_RE = re.compile(r"[a-zA-Z][a-zA-Z0-9']{1,}")
 
-SIGNALS = [
-    ("urgency", re.compile(r"\b(urgent|immediately|today|now|final warning|within \d+ hours|act now)\b", re.I), "The message creates pressure to act quickly."),
-    ("credentials", re.compile(r"\b(password|passcode|one[- ]time code|login|sign in|verify your details|account details)\b", re.I), "The message asks for account or security information."),
-    ("payment", re.compile(r"\b(pay|payment|card details|bank details|refund|fee|cash reward|prize|subscription)\b", re.I), "The message involves money, payment or a reward."),
-    ("link", re.compile(r"\b(link|click|open|website|url|attached document)\b", re.I), "The message directs the reader to an external link or attachment."),
-    ("impersonation", re.compile(r"\b(bank|government|tax|university|support team|delivery|parcel|school)\b", re.I), "The message refers to a trusted organisation or service."),
+NEGATED_SECURITY = re.compile(
+    r"\b(never|do not|don't|dont|avoid|remember not to|should not)\s+(?:ever\s+)?"
+    r"(?:share|send|give|enter|type|provide|disclose|click)\b[^.?!]{0,70}\b"
+    r"(?:password|passcode|one[- ]time code|otp|security code|login)\b", re.I
+)
+EDUCATIONAL_CONTEXT = re.compile(r"\b(awareness|security advice|example of (?:a )?scam|spot (?:a )?scam|protect yourself|phishing is|scammers? may)\b", re.I)
+
+SIGNAL_RULES = [
+    ("urgency", re.compile(r"\b(urgent(?:ly)?|immediately|act now|final warning|today|within\s+\d+\s*(?:minutes?|hours?)|expires?\s+(?:today|soon)|before\s+\d+\s*(?:minutes?|hours?))\b", re.I), "The message uses a time limit or pressure to make a quick decision more likely."),
+    ("credentials", re.compile(r"\b(?:send|share|enter|provide|confirm|verify|update|reset|submit|type|need|needs|require|required|requires)\b[^.?!]{0,80}\b(password|passcode|one[- ]time code|otp|security code|login details|sign[- ]in details)\b|\b(password|passcode|one[- ]time code|otp|security code)\b[^.?!]{0,50}\b(?:required|needed|confirm|verify|send|share|enter|now|immediately)\b", re.I), "It asks for a password, one-time code or other security credential."),
+    ("payment", re.compile(r"\b(?:pay|send|transfer|authori[sz]e|settle|confirm)\b[^.?!]{0,90}(?:£\s?\d|\$\s?\d|€\s?\d|payment|bank details|card details|account number|fee|charge)|(?:£\s?\d[\d,.]*|\$\s?\d[\d,.]*|€\s?\d[\d,.]*)[^.?!]{0,70}\b(?:send|pay|transfer|urgent|now|today|account)\b|\b(?:payment|bank details|card details|fee|charge)\b[^.?!]{0,50}\b(?:required|needed|confirm|pay|send|update)\b", re.I), "It requests or pressures the reader to make a payment or disclose payment details."),
+    ("link", re.compile(r"(?:https?://|www\.)\S+|\b(?:click|tap|open|scan|follow)\b[^.?!]{0,45}\b(?:link|url|qr|code|button|website|portal)\b|\b(?:at|using|via|through)\s+(?:this\s+)?(?:link|url|website|portal)\b", re.I), "It directs the reader to a link, QR code or external destination."),
+    ("impersonation", re.compile(r"\b(?:your\s+)?(?:bank|banking|tax office|hmrc|university|student account|nhs|health service|hospital|delivery company|parcel service|football club|ticket office|support team)\b[^.?!]{0,90}\b(?:verify|confirm|pay|send|sign|login|log in|click|open|update|claim|secure|avoid)\b|\b(?:verify|confirm|pay|send|sign|login|log in|click|open|update|claim|secure|avoid)\b[^.?!]{0,90}\b(?:bank|banking|tax office|hmrc|university|student account|nhs|health service|hospital|delivery company|parcel service|football club|ticket office|support team)\b", re.I), "It combines a trusted-service identity with a request or action."),
+    ("family_impersonation", re.compile(r"\b(?:mum|mom|dad|son|daughter|brother|sister|family|friend)\b[^.?!]{0,100}\b(?:send|transfer|lend|pay|money|£\s?\d|bank)\b|\b(?:send|transfer|lend|pay)\b[^.?!]{0,70}\b(?:mum|mom|dad|son|daughter|brother|sister|family|friend)\b", re.I), "It resembles a family or friend impersonation request involving money."),
+]
+
+LEGITIMATE_CONTEXT = [
+    re.compile(r"\b(?:statement|appointment|meeting|maintenance|coursework|training|delivered|scheduled)\b[^.?!]{0,100}\b(?:available|confirmed|attached|closed|submit|reception|official app|usual portal)\b", re.I),
+    re.compile(r"\b(?:never|do not|don't|dont|avoid)\b[^.?!]{0,80}\b(?:click|share|send|enter|provide)\b", re.I),
 ]
 
 
@@ -116,31 +129,69 @@ class ScamShieldModel:
         return model
 
 
-def explain(text: str, probability: float, model: ScamShieldModel) -> dict:
-    reasons = []
+def _first_phrase(pattern: re.Pattern[str], text: str) -> str:
+    match = pattern.search(text)
+    return re.sub(r"\s+", " ", match.group(0)).strip() if match else ""
+
+
+def contextual_analysis(text: str, probability: float, model: ScamShieldModel) -> dict:
+    """Blend the transparent baseline with conservative, contextual rules.
+
+    The rules are deliberately phrase-based: ordinary words are not evidence by
+    themselves, and awareness text is not treated as an instruction to attack.
+    The returned score is a screening signal, not a calibrated probability.
+    """
+    clean = re.sub(r"\s+", " ", text).strip()
+    evidence = []
     matched = []
-    lower = text.lower()
-    for key, pattern, message in SIGNALS:
-        if pattern.search(text):
+    score = 0.08 + max(0.0, min(0.18, (probability - 0.5) * 0.25))
+    negated = bool(NEGATED_SECURITY.search(clean))
+    educational = bool(EDUCATIONAL_CONTEXT.search(clean))
+    for key, pattern, message in SIGNAL_RULES:
+        phrase = _first_phrase(pattern, clean)
+        if phrase:
             matched.append(key)
-            reasons.append(message)
-    contributors = model.top_contributors(text)
-    if not reasons:
-        positive = [w for w, score in contributors if score > 0]
-        if positive:
-            reasons.append("The wording shares patterns with examples seen during training: " + ", ".join(positive[:3]) + ".")
-    if not reasons:
-        reasons.append("No strong warning pattern was found, but this is not proof that the message is safe.")
-    if probability >= 0.70:
-        label, band = "Suspicious", "High caution"
-        action = "Do not click links or share information. Verify the request through the organisation's official website or a trusted contact route."
-    elif probability >= 0.45:
-        label, band = "Needs caution", "Uncertain"
-        action = "Pause before acting. Check the sender and verify the request independently."
+            evidence.append({"phrase": phrase, "explanation": message})
+            score += {"urgency": .18, "credentials": .45, "payment": .28, "link": .12, "impersonation": .12, "family_impersonation": .30}[key]
+    if negated or educational:
+        score -= 0.45
+        matched = [key for key in matched if key != "credentials"]
+        evidence = [item for item in evidence if not any(term in item["phrase"].lower() for term in ("password", "passcode", "one-time code", "otp", "security code"))]
+    if "credentials" in matched and ("urgency" in matched or "impersonation" in matched):
+        score += 0.12
+    if "payment" in matched and "urgency" in matched:
+        score += 0.08
+    if any(pattern.search(clean) for pattern in LEGITIMATE_CONTEXT):
+        score -= 0.16
+    score = round(max(0.02, min(0.98, score)), 3)
+    if score >= 0.68:
+        label, band = "High risk", "High caution"
+        action = "Do not click, pay or share credentials. Contact the organisation or person using a number or website you already trust."
+    elif score >= 0.36:
+        label, band = "Needs verification", "Uncertain"
+        action = "Pause before acting. Verify the sender and request independently; do not use contact details in the message."
     else:
-        label, band = "Likely legitimate", "Lower caution"
-        action = "Continue to be careful. Do not share sensitive information unless you have independently verified the request."
-    return {"label": label, "band": band, "probability": round(probability, 3), "reasons": reasons[:4], "signals": matched, "action": action}
+        label, band = "Few warning signs detected", "Lower caution"
+        action = "No strong scam pattern was detected. This does not prove authenticity; continue without sharing sensitive information until the request is independently verified."
+    if not evidence:
+        evidence = [{"phrase": "No specific scam phrase detected", "explanation": "The screening rules found no strong, contextual warning signal in this message."}]
+    reasons = [f"“{item['phrase']}” — {item['explanation']}" for item in evidence[:4]]
+    return {
+        "label": label,
+        "band": band,
+        "probability": score,
+        "risk_score": score,
+        "score_meaning": "Screening signal, not a calibrated probability or proof of fraud.",
+        "reasons": reasons,
+        "evidence": evidence[:4],
+        "signals": matched,
+        "action": action,
+        "model_version": "contextual-baseline-v2",
+    }
+
+
+def explain(text: str, probability: float, model: ScamShieldModel) -> dict:
+    return contextual_analysis(text, probability, model)
 
 
 def train_from_csv(path: str | Path) -> ScamShieldModel:

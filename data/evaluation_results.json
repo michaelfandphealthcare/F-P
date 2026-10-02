@@ -1,0 +1,15 @@
+{
+  "status": "measured_held_out_result",
+  "evaluation_date": "2026-10-02",
+  "model_version": "contextual-baseline-v2",
+  "dataset_version": "heldout_messages-v1",
+  "test_rows": 12,
+  "class_distribution": {"legitimate": 7, "phishing": 5},
+  "metrics": {"precision": 1.0, "recall": 0.8, "f1": 0.889, "false_positives": 0, "missed_scams": 1},
+  "confusion_matrix": {"true_negative": 7, "false_positive": 0, "false_negative": 1, "true_positive": 4},
+  "limitations": [
+    "Small, hand-curated development and held-out sets are not representative of real-world prevalence.",
+    "The screening score is not a calibrated probability.",
+    "No domain reputation or live URL verification is performed."
+  ]
+}

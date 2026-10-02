@@ -20,6 +20,7 @@ DATA = ROOT / "data" / "sample_messages.csv"
 MODEL = ROOT / "artifacts" / "baseline_model.json"
 EVIDENCE = ROOT / "data" / "public_evidence.json"
 SCENARIOS = ROOT / "data" / "dashboard_scenarios.json"
+EVALUATION = ROOT / "data" / "evaluation_results.json"
 model = load_or_train(MODEL, DATA)
 
 
@@ -29,7 +30,9 @@ def dashboard_payload() -> dict:
         evidence = json.load(f)
     with open(SCENARIOS, encoding="utf-8") as f:
         scenarios = json.load(f)
-    return {"evidence": evidence, "scenarios": scenarios}
+    with open(EVALUATION, encoding="utf-8") as f:
+        evaluation = json.load(f)
+    return {"evidence": evidence, "scenarios": scenarios, "evaluation": evaluation}
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -91,6 +94,8 @@ class Handler(BaseHTTPRequestHandler):
             return
         try:
             length = int(self.headers.get("Content-Length", "0"))
+            if length > 20_000:
+                raise ValueError("The request is too large for this prototype.")
             payload = json.loads(self.rfile.read(length) or b"{}")
             text = str(payload.get("text", "")).strip()
             if len(text) < 12:
@@ -102,6 +107,8 @@ class Handler(BaseHTTPRequestHandler):
             self._send(200, "application/json", json.dumps(result).encode("utf-8"))
         except ValueError as e:
             self._send(400, "application/json", json.dumps({"error": str(e)}).encode("utf-8"))
+        except json.JSONDecodeError:
+            self._send(400, "application/json", b'{"error":"Please send a valid JSON request."}')
         except Exception:
             self._send(500, "application/json", b'{"error":"The prototype could not analyse this message."}')
 

@@ -8,7 +8,7 @@ This is a controlled academic prototype. It analyses pasted fictional or public 
 
 ## Current prototype
 
-The first vertical slice uses a transparent TF-IDF-style classifier implemented with Python and NumPy, together with a rule-based explanation layer. This keeps the baseline reproducible and makes the system's reasoning inspectable. The next research iterations should add a stronger embedding-based comparison, a documented dataset, adversarial/AI-rewritten test variants and the full evaluation report.
+The current vertical slice uses a transparent TF-IDF-style classifier implemented with Python and NumPy, together with a contextual rule layer. The rules look for phrases that combine an action with a credential, payment, link, urgency or trusted-service reference. Negated advice such as “never share your password” and quoted scam examples are treated as awareness content rather than requests. Explanations quote the observed phrase and state what it means; the score is a screening signal, not calibrated probability.
 
 The interface also includes a research dashboard and a multimodal evidence lab. The evidence lab previews redacted screenshots locally and records transparent human annotations for visible warning signs. Its evidence cards link to public UK sources, while its charts are explicitly labelled synthetic demonstration data or official context. This prevents the project from presenting fictional test scenarios as claims about real banks, universities, football clubs or other named organisations. See `docs/data_provenance.md` and `docs/multimodal_evidence_method.md`.
 
@@ -40,3 +40,14 @@ The public version should use fictional/public evidence only. Do not enable perm
 - Threat model, ethics record and risk updates
 
 See `docs/evaluation_plan.md`, `docs/ethics_and_scope.md` and `docs/model_card.md`.
+
+## Reproduce the held-out evaluation
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+.venv/bin/python -m src.evaluate
+.venv/bin/python -m unittest -v tests.test_core tests.test_dashboard tests.test_evaluation
+```
+
+The checked-in result is `data/evaluation_results.json`. It contains a small, hand-curated held-out set and must not be presented as real-world accuracy. The current test run reports precision 1.000, recall 0.800 and F1 0.889, with 1 missed scam; the limitations are shown in the Research dashboard.
