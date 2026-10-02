@@ -11,9 +11,10 @@
 </head>
 <body>
   <header class="topbar">
-    <div class="brand"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 40 40" role="img"><path d="M20 3.5 34 8.7v9.8c0 8.7-5.7 15.2-14 18-8.3-2.8-14-9.3-14-18V8.7L20 3.5Z" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="m12.7 20.2 4.7 4.7 10-10" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/></svg></span><span class="brand-copy"><strong>ScamShield</strong><small>Fraud intelligence workspace</small></span></div>
+    <div class="brand"><span class="brand-mark" aria-hidden="true"><img src="/static/logo.svg" alt=""></span><span class="brand-copy"><strong>ScamShield</strong><small>Fraud intelligence workspace</small></span></div>
     <div class="workspace-crumb"><span class="crumb-dot"></span> Academic research <b>/</b> Scam prevention</div>
-    <nav class="nav"><button class="nav-btn active" data-view="scanner">Scanner</button><button class="nav-btn" data-view="evidence">Evidence lab</button><button class="nav-btn" data-view="dashboard">Research dashboard</button><span class="system-status"><i></i> System online</span><span class="prototype-pill">v1.0 research build</span></nav>  </header>
+    <nav class="nav"><button class="nav-btn active" data-view="scanner">Scanner</button><button class="nav-btn" data-view="evidence">Evidence lab</button><button class="nav-btn" data-view="dashboard">Research dashboard</button><span class="system-status"><i></i> System online</span><span class="prototype-pill">v1.0 research build</span></nav>
+  </header>
   <main class="shell">
     <section class="hero view scanner-view">
       <div class="hero-copy"><div class="hero-kicker"><span class="live-dot"></span> Live research prototype <b>/</b> Evidence-led analysis</div>
@@ -22,9 +23,13 @@
         <div class="hero-actions"><button class="hero-cta" data-scroll="workspace">Start an analysis <span>→</span></button><span>Local preview · no inbox connection</span></div>
       </div>
       <aside class="hero-insight"><div class="insight-label"><span>Research focus</span><span class="insight-index">01</span></div><strong>Make digital trust easier to inspect.</strong><p>Built for messages that imitate banks, universities, sports organisations and healthcare services.</p><div class="insight-metrics"><div><b>4</b><span>target sectors</span></div><div><b>3</b><span>review stages</span></div><div><b>0</b><span>real accounts linked</span></div></div></aside>
-    </section>    <section class="fraud-path view scanner-view" aria-label="How a scam travels">
+    </section>
+    <section class="fraud-path view scanner-view" aria-label="How a scam travels">
       <div class="fraud-path-head"><div><span class="eyebrow">Attack-path visualisation</span><h2>How the fraud travels.</h2><p>Follow the route from the first deceptive message to the moment ScamShield interrupts the loss.</p></div><span class="path-status"><i></i> Controlled scenario · animated</span></div>
-      <div class="fraud-path-stage">        <div class="fraud-scene-grid" aria-label="Animated controlled fraud sequence">
+      <div class="fraud-path-stage">
+        <img class="fraud-operator-image" src="/static/assets/fraud-operator-scene.png" alt="An anonymised fraud operator using several screens to send deceptive messages in a controlled research illustration">
+        <div class="fraud-operator-caption"><span class="caption-kicker">CONTROLLED EVIDENCE SCENE</span><strong>One operator. Multiple attack channels.</strong><small>Illustrative scenario — not a photograph of a real offender.</small></div>
+        <div class="fraud-scene-grid" aria-label="Animated controlled fraud sequence">
           <article class="fraud-scene scene-phish"><div class="scene-icon">✉</div><strong>Phishing email</strong><small>Imitates a trusted sender</small><span>VERIFY NOW</span></article>
           <article class="fraud-scene scene-smish"><div class="scene-icon">▣</div><strong>Smishing text</strong><small>Creates pressure and urgency</small><span>OPEN LINK</span></article>
           <article class="fraud-scene scene-spoof"><div class="scene-icon">▤</div><strong>Spoofed login</strong><small>Requests credentials</small><span>CAPTURE ATTEMPT</span></article>
@@ -39,6 +44,7 @@
       <div class="fraud-path-legend"><span><i class="legend-dot danger"></i> Manipulation signal</span><span><i class="legend-dot caution"></i> Risk transfer</span><span><i class="legend-dot safe"></i> Human-led intervention</span></div>
     </section>
     <div class="workflow-strip scanner-view" aria-label="Analysis workflow"><div class="workflow-step active"><span>01</span><div><strong>Paste evidence</strong><small>Message or screenshot</small></div></div><div class="workflow-line"></div><div class="workflow-step"><span>02</span><div><strong>Analyse signals</strong><small>Explainable warning signs</small></div></div><div class="workflow-line"></div><div class="workflow-step"><span>03</span><div><strong>Review safely</strong><small>Human decision support</small></div></div></div>
+    <div class="signal-ribbon scanner-view"><div class="signal-item"><span class="signal-icon teal">↗</span><div><small>Detection coverage</small><strong>Text + screenshot evidence</strong></div></div><div class="signal-item"><span class="signal-icon blue">◎</span><div><small>Decision style</small><strong>Explainable, not mysterious</strong></div></div><div class="signal-item"><span class="signal-icon amber">✓</span><div><small>Safety boundary</small><strong>Human approval stays central</strong></div></div><div class="signal-source"><span class="pulse-ring"></span><span>Prototype status</span><strong>Operational</strong></div></div>
     <section class="sector-visuals view scanner-view">
       <div class="section-kicker"><div><span class="eyebrow">The problem spans every trusted service</span><h2>One threat. Four high-value targets.</h2></div><span class="context-label">Context imagery · not incident evidence</span></div>
       <div class="sector-visual-grid">
