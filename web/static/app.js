@@ -5,6 +5,10 @@ const exampleBtn = document.getElementById('exampleBtn');
 const errorBox = document.getElementById('error');
 const resultPanel = document.getElementById('resultPanel');
 const imageInput = document.getElementById('imageInput');
+const imagePreview = document.getElementById('imagePreview');
+const imageLightbox = document.getElementById('imageLightbox');
+const lightboxImage = document.getElementById('lightboxImage');
+const closeLightbox = document.getElementById('closeLightbox');
 const annotationChecks = document.querySelectorAll('.annotation-check');
 const ocrBtn = document.getElementById('ocrBtn');
 const useOcrBtn = document.getElementById('useOcrBtn');
@@ -12,6 +16,20 @@ const visualExampleBtn = document.getElementById('visualExampleBtn');
 let selectedImageData = null;
 let extractedText = '';
 let selectedExampleText = '';
+
+function openLightbox() {
+  const image = imagePreview?.querySelector('img');
+  if (!image || !imageLightbox || !lightboxImage) return;
+  lightboxImage.src = image.src;
+  lightboxImage.alt = image.alt || 'Full-size evidence preview';
+  imageLightbox.classList.remove('hidden');
+  document.body.classList.add('lightbox-open');
+}
+function closeImageLightbox() { imageLightbox?.classList.add('hidden'); document.body.classList.remove('lightbox-open'); }
+imagePreview?.addEventListener('click', openLightbox);
+closeLightbox?.addEventListener('click', closeImageLightbox);
+imageLightbox?.addEventListener('click', event => { if (event.target === imageLightbox) closeImageLightbox(); });
+document.addEventListener('keydown', event => { if (event.key === 'Escape') closeImageLightbox(); });
 let demoExamples = [];
 
 fetch('/data/demo_examples.json').then(response => response.ok ? response.json() : []).then(items => { demoExamples = items; }).catch(() => {});
