@@ -18,6 +18,7 @@ const removeImageBtn = document.getElementById('removeImageBtn');
 let selectedImageData = null;
 let extractedText = '';
 let selectedExampleText = '';
+let analysisRequestId = 0;
 
 function openLightbox() {
   const image = imagePreview?.querySelector('img');
@@ -204,7 +205,14 @@ function renderBars(id, values, compact = false) {
   root.dataset.ready = 'true';
 }
 
-message.addEventListener('input', () => { counter.textContent = `${message.value.length} / 4000`; });
+message.addEventListener('input', () => {
+  counter.textContent = `${message.value.length} / 4000`;
+  analysisRequestId += 1;
+  if (!resultPanel.classList.contains('empty')) {
+    resultPanel.className = 'result-panel panel empty';
+    resultPanel.innerHTML = '<div class="result-placeholder"><div class="shield">↻</div><h2>Result needs refreshing</h2><p>The message changed. Analyse this current text to replace the previous result.</p></div>';
+  }
+});
 exampleBtn.addEventListener('click', () => {
   const item = demoExamples.length ? demoExamples[Math.floor(Math.random() * demoExamples.length)] : { text: 'Urgent: your account will be suspended today. Confirm your password and payment details using the link below to keep access.' };
   message.value = item.text;
@@ -246,12 +254,15 @@ removeImageBtn?.addEventListener('click', () => {
 
 analyseBtn.addEventListener('click', async () => {
   errorBox.textContent = '';
+  const requestId = ++analysisRequestId;
+  const submittedText = message.value.trim();
   analyseBtn.disabled = true;
   analyseBtn.innerHTML = 'Analysing...';
   try {
-    const response = await fetch('/api/analyse', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({text: message.value}) });
+    const response = await fetch('/api/analyse', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({text: submittedText}) });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || 'Unable to analyse the message.');
+    if (requestId !== analysisRequestId || submittedText !== message.value.trim()) return;
     renderResult(data);
   } catch (err) { errorBox.textContent = err.message; }
   finally { analyseBtn.disabled = false; analyseBtn.innerHTML = 'Analyse message <span aria-hidden="true">→</span>'; }
