@@ -1,0 +1,80 @@
+/* ScamShield audit pass: dark, accessible shared surfaces across every view. */
+:root {
+  --navy: #081521;
+  --ink: #e3edf3;
+  --muted: #aec2cf;
+  --teal: #63d6c6;
+  --teal-dark: #8be7da;
+  --line: #35566a;
+  --bg: #081521;
+  --panel: #122638;
+  --raised: #193449;
+  --input: #0b1d2b;
+  --gold: #3d3218;
+  --blue: #193449;
+}
+html { background: #081521; }
+body { background: #081521; color: #e3edf3; }
+.topbar { background: #081521; border-bottom: 1px solid #35566a; color: #e3edf3; }
+.workspace-crumb, .system-status, .prototype-pill { color: #aec2cf; }
+.brand-project-credit { color: #aec2cf; }
+.shell { background: transparent; }
+.hero, .fraud-path, .victim-journey, .sector-visuals, .workspace, .trust-row, .privacy-panel, .evidence-lab, .dashboard { color: #e3edf3; }
+.hero h1, .hero h2, .section-kicker h2, .dashboard h1, .panel h2, .result-label, .dashboard h2, .dashboard h3 { color: #e3edf3 !important; }
+.hero p, .section-kicker p, .dashboard-intro, .panel p, .chart-head p, .chart-note, .source-note, .preview-hint, .image-meta, .ocr-status, .annotation-result { color: #aec2cf !important; }
+.eyebrow, .chart-kicker, .caption-kicker, .sector-overlay span { color: #63d6c6 !important; }
+.panel, .chart-card, .evidence-card, .case-library, .upload-card, .preview-card, .annotation-card, .home-chart, .trust-row div, .background-context { background: #122638 !important; border-color: #35566a !important; box-shadow: 0 10px 26px rgba(0,0,0,.22); }
+.result-panel { background: #122638 !important; border-color: #35566a !important; }
+.input-panel textarea, textarea, input, .ocr-text, .link-inspector-row input, .conversation-tools textarea { background: #0b1d2b !important; color: #e3edf3 !important; border-color: #35566a !important; }
+textarea::placeholder, input::placeholder, .ocr-text::placeholder { color: #7994a5; }
+textarea:focus, input:focus, .ocr-text:focus { border-color: #63d6c6 !important; box-shadow: 0 0 0 3px rgba(99,214,198,.24) !important; outline: none; }
+.secondary, .journey-controls .secondary { background: #193449 !important; color: #e3edf3 !important; border-color: #4b7185 !important; }
+.secondary:hover, .secondary:focus-visible, .text-button:hover, .text-button:focus-visible { border-color: #63d6c6 !important; color: #63d6c6 !important; }
+.primary, .hero-cta { background: #63d6c6 !important; color: #081521 !important; }
+.primary:hover, .hero-cta:hover { background: #8be7da !important; }
+.action, .feedback-box, .guided-question, .pending-state, .annotation-grid label, .source-case-grid article, .case-grid article { background: #193449 !important; border-color: #35566a !important; color: #e3edf3 !important; }
+.action, .feedback-box strong, .guided-question > span, .case-grid h3, .source-case-grid h3, .reason, .reason span, .bar-label, .bar-value, .scenario-outcome-label, .matrix-row>b, .metric-row>b, .accessible-table th, .accessible-table td { color: #e3edf3 !important; }
+.feedback-box span, .feedback-box small, .guided-intro, .guided-question small, .url-result, .url-result span, .url-result small, .scenario-outcome-row small { color: #aec2cf !important; }
+.feedback-box button, .guided-question button { background: #122638 !important; color: #e3edf3 !important; border-color: #4b7185 !important; }
+.feedback-box button.selected, .guided-question button.selected { background: #174f53 !important; color: #8be7da !important; border-color: #63d6c6 !important; }
+.chart-tag, .chart-tag.synthetic, .chart-tag.pending { background: #3d3218 !important; color: #f3cc72 !important; border-color: #75602a !important; }
+.chart-tag.measured, .chart-tag.teal { background: #174f53 !important; color: #8be7da !important; }
+.bar-track, .metric-track, .grouped-track, .scenario-outcome-track { background: #0b1d2b !important; border: 1px solid #35566a; }
+.bar-fill, .metric-fill, .grouped-fill.model, .scenario-outcome-fill.success { background: #63d6c6 !important; }
+.metric-fill.recall { background: #5fb7d2 !important; }
+.metric-fill.f1 { background: #a2d7c3 !important; }
+.grouped-fill.baseline { background: #8299b3 !important; }
+.scenario-outcome-fill.error { background: #e66b62 !important; }
+.matrix-cell { color: #081521 !important; }
+.matrix-cell.fp { background: #75602a !important; color: #fff0bb !important; }
+.matrix-cell.fn { background: #8e3836 !important; color: #ffe0da !important; }
+.accessible-table th, .accessible-table td { border-color: #35566a !important; }
+.accessible-table caption { color: #aec2cf !important; }
+.fraud-path-stage { border-color: #35566a !important; }
+.privacy-panel { background: #122638 !important; color: #e3edf3 !important; }
+.privacy-grid span { background: #193449 !important; border: 1px solid #35566a; }
+.privacy-grid small { color: #aec2cf !important; }
+.method-note, .dashboard-intro-rule { background: #193449 !important; color: #aec2cf !important; border-color: #35566a !important; }
+.methodology-disclosure { background: #122638 !important; border-color: #35566a !important; color: #e3edf3; }
+.methodology-disclosure summary, .methodology-disclosure h3 { color: #e3edf3 !important; }
+.methodology-disclosure p, .methodology-disclosure li { color: #aec2cf !important; }
+.methodology-disclosure a, .source-case-grid a { color: #8be7da !important; }
+.background-context { margin-top: 18px; padding: 14px 18px 18px; border: 1px solid #35566a; border-radius: 16px; }
+.background-context > summary { color: #e3edf3; cursor: pointer; font-weight: 800; }
+.background-context .home-intel-grid { margin-top: 14px; }
+.home-stat { background: #193449 !important; border: 1px solid #35566a; }
+.home-stat span { color: #63d6c6 !important; }
+.home-stat small, .home-stat strong { color: #aec2cf !important; }
+.journey-controls { display:flex; align-items:center; justify-content:center; gap:10px; margin:0 0 14px; }
+.journey-controls .journey-progress { min-width:110px; color:#aec2cf; font-size:13px; text-align:center; }
+.journey-controls .text-button { border:0; background:transparent; color:#aec2cf; cursor:pointer; padding:8px; }
+.journey-step { opacity:.5; transition: opacity .2s ease, transform .2s ease; }
+.journey-step.journey-active { opacity:1; transform:translateY(-3px); }
+.journey-track[data-current-step="0"] .journey-step:not(:first-of-type), .journey-track[data-current-step="1"] .journey-step:not(:nth-of-type(2)), .journey-track[data-current-step="2"] .journey-step:not(:nth-of-type(3)), .journey-track[data-current-step="3"] .journey-step:not(:nth-of-type(4)) { opacity:.5; }
+.journey-message, .journey-alert, .journey-safe-call { background:#0b1d2b !important; color:#e3edf3 !important; border-color:#63d6c6 !important; }
+.reason-evidence { display:block; margin-top:7px; border:1px solid #4b7185; border-radius:999px; padding:4px 8px; background:#122638; color:#8be7da; font:inherit; font-size:11px; cursor:pointer; }
+.reason-evidence:hover, .reason-evidence:focus-visible { border-color:#63d6c6; outline:2px solid rgba(99,214,198,.25); }
+.no-evidence { display:block; margin-top:6px; color:#aec2cf; font-size:11px; }
+footer { border-color: #35566a; color: #aec2cf; }
+@media (max-width: 800px) { .journey-controls { justify-content:flex-start; flex-wrap:wrap; } .journey-track { grid-template-columns:1fr !important; } .journey-arrow { display:none; } .journey-step:not(.journey-active) { display:none; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count:1 !important; scroll-behavior:auto !important; transition-duration:.01ms !important; } }

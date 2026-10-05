@@ -232,6 +232,10 @@ function renderMeasuredCharts(evaluation) {
   if (metricTable) metricTable.innerHTML = `<table><caption>Measured performance percentages</caption><thead><tr><th>Metric</th><th>Value</th><th>Meaning</th></tr></thead><tbody><tr><th>Precision</th><td>${Math.round((metrics.precision || 0) * 100)}%</td><td>How many flagged messages were scams</td></tr><tr><th>Recall</th><td>${Math.round((metrics.recall || 0) * 100)}%</td><td>How many scams were detected</td></tr><tr><th>F1</th><td>${Math.round((metrics.f1 || 0) * 100)}%</td><td>Combined precision/recall measure</td></tr></tbody></table>`;
   const scenarioChart = document.getElementById('scenarioChart');
   if (scenarioChart) {
+    if (String(evaluation.scenario_performance_status || '').toLowerCase().includes('pending')) {
+      scenarioChart.className = 'pending-state';
+      scenarioChart.innerHTML = `<div class="pending-icon" aria-hidden="true">—</div><strong>Scenario comparison pending</strong><p>${escapeHtml(evaluation.scenario_performance_status)}</p>`;
+    } else {
     const records = evaluation.records || [];
     scenarioChart.innerHTML = records.map(record => {
       const actual = record.label === 'phishing' ? 'scam' : 'legitimate';
@@ -241,6 +245,7 @@ function renderMeasuredCharts(evaluation) {
       const tone = correct ? (actual === 'scam' ? 'success' : 'neutral') : 'error';
       return `<div class="scenario-outcome-row"><span class="scenario-outcome-label">${escapeHtml(record.scenario)}</span><span class="scenario-outcome-track"><span class="scenario-outcome-fill ${tone}"></span></span><strong class="scenario-outcome-status ${tone}">${status}</strong><small>n=1</small></div>`;
     }).join('');
+    }
   }
   const baselineChart = document.getElementById('baselineChart');
   if (baselineChart) {
@@ -334,7 +339,13 @@ analyseBtn.addEventListener('click', async () => {
 
 function renderResult(data) {
   resultPanel.className = 'result-panel panel';
-  const reasons = data.reasons.map(reason => `<div class="reason"><i>✓</i><span>${escapeHtml(reason)}</span></div>`).join('');
+  const evidence = data.evidence || [];
+  const reasons = data.reasons.map((reason, index) => {
+    const item = evidence[index];
+    const phrase = item?.phrase || '';
+    const control = phrase && !phrase.startsWith('No specific') ? `<button type="button" class="reason-evidence" data-evidence-phrase="${escapeHtml(phrase)}" title="Highlight this phrase in the submitted message">View supporting text</button>` : '<small class="no-evidence">No exact excerpt available.</small>';
+    return `<div class="reason"><i>✓</i><span>${escapeHtml(reason)}${control}</span></div>`;
+  }).join('');
   const reasonHeading = data.label === 'Few warning signs detected' ? 'What the analysis found' : 'Signals requiring attention';
   const guided = guidedVerification(data);
   resultPanel.innerHTML = `<div class="result-head"><div><div class="result-label">${escapeHtml(data.label)}</div><span class="band">${escapeHtml(data.band)}</span></div></div><div class="result-section"><h3>${reasonHeading}</h3>${reasons}</div><div class="result-section"><h3>Safer next step</h3><div class="action">${escapeHtml(data.action)}</div></div>${guided}<div class="feedback-box"><strong>Help improve the research</strong><span>Was this explanation useful?</span><div><button type="button" data-feedback="helpful">Yes, helpful</button><button type="button" data-feedback="unclear">Needs improvement</button></div><small id="feedbackStatus" aria-live="polite"></small></div><p class="result-disclaimer">${escapeHtml(data.score_meaning || 'This is decision support, not proof that a message is fraudulent.')}</p>`;
@@ -345,6 +356,17 @@ function renderResult(data) {
     resultPanel.querySelector('#feedbackStatus').textContent = 'Thank you — your feedback stays on this device for the prototype.';
   }));
 }
+
+resultPanel.addEventListener('click', event => {
+  const button = event.target.closest('[data-evidence-phrase]');
+  if (!button || !message) return;
+  const phrase = button.dataset.evidencePhrase;
+  const start = message.value.toLowerCase().indexOf(phrase.toLowerCase());
+  if (start < 0) { button.textContent = 'Excerpt not found in current text'; return; }
+  message.focus();
+  message.setSelectionRange(start, start + phrase.length);
+  button.textContent = 'Highlighted in message';
+});
 
 function guidedVerification(data) {
   const signals = new Set(data.signals || []);
@@ -404,3 +426,28 @@ function inspectUrl() {
 inspectUrlBtn?.addEventListener('click', inspectUrl);
 urlInput?.addEventListener('keydown', event => { if (event.key === 'Enter') inspectUrl(); });
 function escapeHtml(value) { return String(value).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+
+const journeyTrack = document.querySelector('.journey-track');
+const journeySteps = journeyTrack ? [...journeyTrack.querySelectorAll('.journey-step')] : [];
+const journeyPrev = document.querySelector('.journey-prev');
+const journeyNext = document.querySelector('.journey-next');
+const journeyReset = document.querySelector('.journey-reset');
+const journeyProgress = document.querySelector('.journey-progress');
+let journeyIndex = 0;
+function updateJourney(index) {
+  if (!journeySteps.length) return;
+  journeyIndex = Math.max(0, Math.min(index, journeySteps.length - 1));
+  journeyTrack.dataset.currentStep = String(journeyIndex);
+  journeySteps.forEach((step, stepIndex) => {
+    const active = stepIndex === journeyIndex;
+    step.classList.toggle('journey-active', active);
+    step.setAttribute('aria-current', active ? 'step' : 'false');
+  });
+  if (journeyPrev) journeyPrev.disabled = journeyIndex === 0;
+  if (journeyNext) journeyNext.disabled = journeyIndex === journeySteps.length - 1;
+  if (journeyProgress) journeyProgress.textContent = `Stage ${journeyIndex + 1} of ${journeySteps.length}`;
+}
+journeyPrev?.addEventListener('click', () => updateJourney(journeyIndex - 1));
+journeyNext?.addEventListener('click', () => updateJourney(journeyIndex + 1));
+journeyReset?.addEventListener('click', () => updateJourney(0));
+updateJourney(0);
