@@ -92,7 +92,15 @@ body[data-active-view="dashboard"] .app-motion-bg::before { animation-name: back
 .motion-hidden .hero-visual-image,
 .motion-hidden .app-motion-bg::before,
 .motion-out-of-view .hero-visual-image,
-.motion-out-of-view .hero-visual-image { animation-play-state: paused !important; }
+.motion-out-of-view .app-motion-bg::before { animation-play-state: paused !important; }
+
+/* The control is global: every decorative loop, including pseudo-elements,
+   stops while forms and manual journey controls remain usable. */
+.motion-paused *, .motion-paused *::before, .motion-paused *::after,
+.motion-hidden *, .motion-hidden *::before, .motion-hidden *::after,
+.motion-out-of-view *, .motion-out-of-view *::before, .motion-out-of-view *::after {
+  animation-play-state: paused !important;
+}
 
 @media (max-width: 800px) {
   .app-motion-bg::before { animation: backgroundHomeSmall 10s linear infinite alternate; }

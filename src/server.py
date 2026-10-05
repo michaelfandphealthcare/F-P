@@ -10,13 +10,13 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 try:
-    from .core import explain, load_or_train
+    from .core import MODEL_VERSION, explain, load_or_train
 except ImportError:  # Supports both `python src/server.py` and package imports.
-    from core import explain, load_or_train
+    from core import MODEL_VERSION, explain, load_or_train
 
 ROOT = Path(__file__).resolve().parents[1]
 WEB = ROOT / "web"
-BUILD_ID = os.environ.get("SCAMSHIELD_BUILD_ID") or os.environ.get("RENDER_GIT_COMMIT", "local-contextual-v4")
+BUILD_ID = os.environ.get("SCAMSHIELD_BUILD_ID") or os.environ.get("RENDER_GIT_COMMIT", "local-contextual-v5")
 DATA = ROOT / "data" / "sample_messages.csv"
 MODEL = ROOT / "artifacts" / "baseline_model.json"
 EVIDENCE = ROOT / "data" / "public_evidence.json"
@@ -56,7 +56,7 @@ class Handler(BaseHTTPRequestHandler):
         elif path == "/health":
             self._send(200, "application/json", json.dumps({"status": "ok", "prototype": "baseline", "build_id": BUILD_ID}).encode("utf-8"))
         elif path == "/api/meta":
-            self._send(200, "application/json", json.dumps({"build_id": BUILD_ID, "model_version": "contextual-baseline-v4", "ocr": "browser-local-tesseract"}).encode("utf-8"))
+            self._send(200, "application/json", json.dumps({"build_id": BUILD_ID, "model_version": MODEL_VERSION, "ocr": "browser-local-tesseract"}).encode("utf-8"))
         elif path == "/api/dashboard":
             self._send(200, "application/json", json.dumps(dashboard_payload()).encode("utf-8"))
         elif path.startswith("/static/"):

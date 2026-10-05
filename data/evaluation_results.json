@@ -1,34 +1,158 @@
 {
-  "status": "measured_held_out_result",
+  "dataset": {
+    "version": "heldout_messages-v1",
+    "train": "data/sample_messages.csv",
+    "test": "data/heldout_messages.csv",
+    "test_rows": 12,
+    "class_distribution": {
+      "legitimate": 7,
+      "phishing": 5
+    }
+  },
   "evaluation_date": "2026-10-05",
-  "model_version": "contextual-baseline-v4",
-  "dataset_version": "heldout_messages-v1",
-  "test_rows": 12,
-  "class_distribution": {"legitimate": 7, "phishing": 5},
-  "metrics": {"precision": 1.0, "recall": 1.0, "f1": 1.0, "false_positives": 0, "missed_scams": 0, "confusion_matrix": {"true_negative": 7, "false_positive": 0, "false_negative": 0, "true_positive": 5}},
-  "baseline_metrics": {"precision": 0.667, "recall": 0.8, "f1": 0.727, "confusion_matrix": {"true_negative": 5, "false_positive": 2, "false_negative": 1, "true_positive": 4}, "method": "TF-IDF-only score at threshold 0.5"},
-  "baseline_status": "Measured on the same held-out split using the TF-IDF-only score at a fixed 0.5 threshold.",
-  "scenario_performance_status": "Pending: each named scenario type has only one held-out message, so no stable per-scenario estimate is reported.",
+  "model_version": "contextual-baseline-v5",
+  "decision_threshold": 0.36,
+  "score_scale": "0\u2013100 screening score; not a calibrated probability",
+  "metrics": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "false_positives": 0,
+    "missed_scams": 0,
+    "confusion_matrix": {
+      "true_negative": 7,
+      "false_positive": 0,
+      "false_negative": 0,
+      "true_positive": 5
+    }
+  },
   "records": [
-    {"scenario": "conversation", "label": "legitimate", "prediction": 0, "risk_score": 0.32},
-    {"scenario": "banking", "label": "legitimate", "prediction": 0, "risk_score": 0.18},
-    {"scenario": "healthcare", "label": "legitimate", "prediction": 0, "risk_score": 0.18},
-    {"scenario": "university", "label": "legitimate", "prediction": 0, "risk_score": 0.32},
-    {"scenario": "ticketing", "label": "legitimate", "prediction": 0, "risk_score": 0.18},
-    {"scenario": "awareness", "label": "legitimate", "prediction": 0, "risk_score": 0.18},
-    {"scenario": "quoted-scam", "label": "legitimate", "prediction": 0, "risk_score": 0.18},
-    {"scenario": "credential-theft", "label": "phishing", "prediction": 1, "risk_score": 0.98},
-    {"scenario": "family-impersonation", "label": "phishing", "prediction": 1, "risk_score": 0.98},
-    {"scenario": "healthcare-payment", "label": "phishing", "prediction": 1, "risk_score": 0.98},
-    {"scenario": "university-impersonation", "label": "phishing", "prediction": 1, "risk_score": 0.98},
-    {"scenario": "ticket-deadline", "label": "phishing", "prediction": 1, "risk_score": 0.98}
+    {
+      "scenario": "conversation",
+      "label": "legitimate",
+      "prediction": 0,
+      "expected": "legitimate",
+      "actual": "legitimate",
+      "risk_score": 0.08,
+      "score_0_100": 8
+    },
+    {
+      "scenario": "banking",
+      "label": "legitimate",
+      "prediction": 0,
+      "expected": "legitimate",
+      "actual": "legitimate",
+      "risk_score": 0.08,
+      "score_0_100": 8
+    },
+    {
+      "scenario": "healthcare",
+      "label": "legitimate",
+      "prediction": 0,
+      "expected": "legitimate",
+      "actual": "legitimate",
+      "risk_score": 0.08,
+      "score_0_100": 8
+    },
+    {
+      "scenario": "university",
+      "label": "legitimate",
+      "prediction": 0,
+      "expected": "legitimate",
+      "actual": "legitimate",
+      "risk_score": 0.08,
+      "score_0_100": 8
+    },
+    {
+      "scenario": "ticketing",
+      "label": "legitimate",
+      "prediction": 0,
+      "expected": "legitimate",
+      "actual": "legitimate",
+      "risk_score": 0.08,
+      "score_0_100": 8
+    },
+    {
+      "scenario": "awareness",
+      "label": "legitimate",
+      "prediction": 0,
+      "expected": "legitimate",
+      "actual": "legitimate",
+      "risk_score": 0.02,
+      "score_0_100": 2
+    },
+    {
+      "scenario": "quoted-scam",
+      "label": "legitimate",
+      "prediction": 0,
+      "expected": "legitimate",
+      "actual": "legitimate",
+      "risk_score": 0.088,
+      "score_0_100": 9
+    },
+    {
+      "scenario": "credential-theft",
+      "label": "phishing",
+      "prediction": 1,
+      "expected": "phishing",
+      "actual": "phishing",
+      "risk_score": 0.98,
+      "score_0_100": 98
+    },
+    {
+      "scenario": "family-impersonation",
+      "label": "phishing",
+      "prediction": 1,
+      "expected": "phishing",
+      "actual": "phishing",
+      "risk_score": 0.615,
+      "score_0_100": 62
+    },
+    {
+      "scenario": "healthcare-payment",
+      "label": "phishing",
+      "prediction": 1,
+      "expected": "phishing",
+      "actual": "phishing",
+      "risk_score": 0.784,
+      "score_0_100": 78
+    },
+    {
+      "scenario": "university-impersonation",
+      "label": "phishing",
+      "prediction": 1,
+      "expected": "phishing",
+      "actual": "phishing",
+      "risk_score": 0.98,
+      "score_0_100": 98
+    },
+    {
+      "scenario": "ticket-deadline",
+      "label": "phishing",
+      "prediction": 1,
+      "expected": "phishing",
+      "actual": "phishing",
+      "risk_score": 0.62,
+      "score_0_100": 62
+    }
   ],
+  "baseline_metrics": {
+    "precision": 0.667,
+    "recall": 0.8,
+    "f1": 0.727,
+    "confusion_matrix": {
+      "true_negative": 5,
+      "false_positive": 2,
+      "false_negative": 1,
+      "true_positive": 4
+    },
+    "method": "TF-IDF-only score at threshold 0.5"
+  },
+  "failure_examples": [],
   "limitations": [
     "Small, hand-curated development and held-out sets are not representative of real-world prevalence.",
     "The screening score is not a calibrated probability.",
-    "No domain reputation or live URL verification is performed.",
-    "The perfect score on this small split may reflect the strength of the contextual rules and the limited, hand-curated coverage; it is not evidence of real-world reliability.",
-    "The current threshold is a documented screening threshold and should be reselected on a separate validation set before a larger study.",
-    "Named scenario groups have one example each and are not large enough for reliable scenario-level comparison."
+    "The challenge set is a development regression set and is not independent evidence after known failures have been corrected.",
+    "No domain reputation or live URL verification is performed."
   ]
 }

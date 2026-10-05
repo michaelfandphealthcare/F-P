@@ -202,7 +202,7 @@ button:focus-visible, summary:focus-visible, input:focus-visible, textarea:focus
 .scenario-score-axis > div { position:relative; display:block; height:14px; }
 .scenario-score-axis i { position:absolute; top:0; font-style:normal; transform:translateX(-50%); }
 .scenario-score-axis i:nth-child(1) { left:0; transform:none; }
-.scenario-score-axis i:nth-child(2) { left:35%; color:#f3cc72; }
+.scenario-score-axis i:nth-child(2) { left:36%; color:#f3cc72; }
 .scenario-score-axis i:nth-child(3) { left:50%; }
 .scenario-score-axis i:nth-child(4) { left:75%; }
 .scenario-score-axis i:nth-child(5) { left:100%; transform:translateX(-100%); }
@@ -215,7 +215,7 @@ button:focus-visible, summary:focus-visible, input:focus-visible, textarea:focus
 .scenario-score-fill.scam { background:#e56a60; }
 .scenario-score-fill.false-alarm { background:#f3b94f; }
 .scenario-score-fill.missed { background:#e56a60; opacity:.55; }
-.scenario-threshold { position:absolute; z-index:2; top:-3px; bottom:-3px; left:35%; border-left:2px dashed #f3b94f; }
+.scenario-threshold { position:absolute; z-index:2; top:-3px; bottom:-3px; left:36%; border-left:2px dashed #f3b94f; }
 .legend-swatch.legitimate { background:#63d6c6; }
 .legend-swatch.scam { background:#e56a60; }
 .legend-threshold { width:22px; border-top:2px dashed #f3b94f; }

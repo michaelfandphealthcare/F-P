@@ -22,11 +22,11 @@ Users should verify important requests through an independent trusted route. The
 
 ## Current implementation
 
-`contextual-baseline-v4` combines the original TF-IDF-style NumPy baseline with clause-aware conservative phrase rules. It explicitly tests authentication-code disclosure and support/helpdesk impersonation, separates negations and protective advice from actionable requests, and can still detect a malicious instruction in a different clause. Each displayed reason includes the matched phrase and a contextual interpretation. Ordinary words are not reasons. No domain reputation, logo authentication, face recognition or live URL fetch is performed.
+`contextual-baseline-v5` combines the original TF-IDF-style NumPy baseline with clause-aware conservative phrase rules. It detects authentication-code disclosure, changed-contact family impersonation, payment pressure and attempts to discourage independent verification. A support term such as “IT team” is evidence only when it is paired with a sensitive action request. Negations, preventative advice and quoted educational examples are separated from actionable requests, while a malicious instruction in another clause remains detectable. Each warning includes an exact excerpt from the submitted input. The 0–100 output is a screening score, not a calibrated probability. No domain reputation, logo authentication, face recognition or live URL fetch is performed.
 
 ## Reproducible evaluation
 
-The held-out set is `data/heldout_messages.csv`, with the measured summary in `data/evaluation_results.json`. Run `python3 -m src.evaluate` to reproduce it. The set covers legitimate banking, university, healthcare, ticketing, conversation and awareness messages plus credential theft, family impersonation, healthcare payment, university impersonation and ticket deadline scams. It is small and hand-curated, so the result is evidence of a test run—not evidence of generalisation.
+The held-out set is `data/heldout_messages.csv`, with the measured summary in `data/evaluation_results.json`. Run `python3 -m src.evaluate` to reproduce both checked-in JSON exports. The held-out set covers legitimate banking, university, healthcare, ticketing, conversation and awareness messages plus credential theft, family impersonation, healthcare payment, university impersonation and ticket deadline scams. It contains only 12 hand-curated messages, so its 12/12 result is evidence of this test run—not evidence of generalisation. The 24-message challenge set is a development regression set after known failures were corrected against it; its result must not be presented as independent confirmation.
 
 ## Additional limitations
 

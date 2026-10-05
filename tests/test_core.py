@@ -39,6 +39,51 @@ class ScamShieldTests(unittest.TestCase):
         self.assertIn(result['label'], {'High risk', 'Needs verification'})
         self.assertTrue(any('six-digit code' in reason for reason in result['reasons']))
 
+    def test_family_changed_number_transfer_request_detects_combined_tactics(self):
+        text = 'Hi Mum, I lost my phone. This is my new number. Please transfer £850 to this account today and do not call my old number.'
+        result = explain(text, self.model.predict_probability(text), self.model)
+        self.assertEqual(result['label'], 'High risk')
+        self.assertTrue({'family_impersonation', 'changed_contact', 'payment', 'urgency', 'discouraged_verification'}.issubset(result['signals']))
+        self.assertIn('previously trusted', result['action'])
+
+    def test_security_awareness_report_to_it_is_not_support_impersonation(self):
+        text = 'Security awareness reminder: never share your password or verification code. Report suspicious emails to the IT team.'
+        result = explain(text, self.model.predict_probability(text), self.model)
+        self.assertEqual(result['label'], 'Few warning signs detected')
+        self.assertNotIn('support_impersonation', result['signals'])
+        self.assertEqual(result['signals'], [])
+
+    def test_direct_password_and_code_request_remains_high_risk(self):
+        text = 'Send your password and verification code here to stop your bank account closing today.'
+        result = explain(text, self.model.predict_probability(text), self.model)
+        self.assertEqual(result['label'], 'High risk')
+        self.assertIn('credentials', result['signals'])
+        credential_reasons = [item for item in result['evidence'] if item['explanation'].startswith('It asks for a password')]
+        self.assertEqual(len(credential_reasons), 1)
+
+    def test_it_team_term_requires_a_sensitive_action(self):
+        text = 'The IT team will give a security-awareness talk in the library tomorrow.'
+        result = explain(text, self.model.predict_probability(text), self.model)
+        self.assertNotIn('support_impersonation', result['signals'])
+
+    def test_malicious_request_is_not_hidden_by_advice_clause(self):
+        text = 'Security reminder: never share codes with strangers. However, send your verification code to this support desk now.'
+        result = explain(text, self.model.predict_probability(text), self.model)
+        self.assertIn('authentication_code', result['signals'])
+        self.assertNotEqual(result['label'], 'Few warning signs detected')
+
+    def test_every_reported_evidence_excerpt_comes_from_input(self):
+        samples = [
+            'Hi Dad, my phone broke. Use my new number and transfer $600 today. Do not call the old number.',
+            'The helpdesk needs you to approve this login immediately.',
+            'Please pay €40 today using this link: https://example.test/pay',
+        ]
+        for text in samples:
+            result = explain(text, self.model.predict_probability(text), self.model)
+            for item in result['evidence']:
+                if item['phrase'] != 'No specific scam phrase detected':
+                    self.assertIn(item['phrase'].lower(), text.lower())
+
     def test_unfamiliar_authentication_code_paraphrase_is_detected(self):
         text = 'Security operations need you to forward the verification number from your phone to approve the new login.'
         result = explain(text, self.model.predict_probability(text), self.model)

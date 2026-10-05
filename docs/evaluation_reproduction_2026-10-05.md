@@ -5,10 +5,10 @@
 - Training data: `data/sample_messages.csv` (22 labelled development examples).
 - Final held-out data: `data/heldout_messages.csv` (12 examples: 7 legitimate, 5 phishing).
 - Additional challenge data: `data/challenge_messages.csv` (24 examples: 12 legitimate, 12 phishing).
-- Model/rules version: `contextual-baseline-v4`.
-- Decision threshold: screening score `>= 0.35`.
+- Model/rules version: `contextual-baseline-v5`.
+- Decision threshold: screening score `>= 0.36` (displayed as 36/100).
 
-The challenge set was written after the development examples and is not used by the training function. Its provenance column records that the examples are author-created. It is a robustness check, not a population sample. After its first recorded run, its two false alarms were retained and no rules were changed against those failures.
+The challenge set was written after the original development examples and is not used by the training function. Its provenance column records that the examples are author-created. Two known failures were subsequently used to improve the contextual rules, so the set is now classified as a development regression set rather than an independent final test set.
 
 ## Reproduction commands
 
@@ -19,12 +19,12 @@ Run the Python unit tests and the JavaScript conversation tests, then execute th
 | Dataset | n | Legitimate | Scam | Precision | Recall | F1 | TN | FP | FN | TP |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | Held-out v1 | 12 | 7 | 5 | 1.000 | 1.000 | 1.000 | 7 | 0 | 0 | 5 |
-| Challenge v1 | 24 | 12 | 12 | 0.857 | 1.000 | 0.923 | 10 | 2 | 0 | 12 |
+| Development challenge v1 | 24 | 12 | 12 | 1.000 | 1.000 | 1.000 | 12 | 0 | 0 | 12 |
 | TF-IDF-only baseline on challenge v1 | 24 | 12 | 12 | 0.733 | 0.917 | 0.815 | 8 | 4 | 1 | 11 |
 
-## Recorded failure examples
+## Resolved regression examples
 
-The challenge run incorrectly flagged a benign family-payment discussion containing an explicit denial and a security-awareness sentence that quoted a login-approval instruction. These are false alarms. They remain documented rather than being tuned away on the challenge set.
+The v5 rules correct two reproduced live failures: a changed-number family transfer request that was previously missed, and a preventative security reminder that was incorrectly made high risk by the words “IT team.” The generated challenge JSON records the expected behaviour, previous output and current regression coverage. A future final evaluation must use newly sourced, frozen examples that were not used to make these corrections.
 
 ## Limitations
 

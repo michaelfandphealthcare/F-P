@@ -18,9 +18,10 @@ class DashboardDataTests(unittest.TestCase):
 
     def test_measured_evaluations_are_versioned_and_separate(self):
         payload = dashboard_payload()
-        self.assertEqual(payload["evaluation"]["model_version"], "contextual-baseline-v4")
-        self.assertEqual(payload["challenge_evaluation"]["dataset_version"], "challenge_messages-v1")
-        self.assertEqual(payload["challenge_evaluation"]["metrics"]["false_positives"], 2)
+        self.assertEqual(payload["evaluation"]["model_version"], "contextual-baseline-v5")
+        self.assertEqual(payload["challenge_evaluation"]["dataset"]["version"], "challenge_messages-v1")
+        self.assertEqual(payload["challenge_evaluation"]["metrics"]["false_positives"], 0)
+        self.assertIn("regression", payload["challenge_evaluation"]["dataset_role"].lower())
 
 
 if __name__ == "__main__":

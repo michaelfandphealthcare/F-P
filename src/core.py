@@ -19,23 +19,37 @@ from typing import Iterable
 import numpy as np
 
 TOKEN_RE = re.compile(r"[a-zA-Z][a-zA-Z0-9']{1,}")
+MODEL_VERSION = "contextual-baseline-v5"
+DECISION_THRESHOLD = 0.36
 
 NEGATED_SECURITY = re.compile(
     r"\b(never|do not|don't|dont|avoid|remember not to|should not)\s+(?:ever\s+)?"
     r"(?:share|send|give|enter|type|provide|disclose|click)\b[^.?!]{0,70}\b"
     r"(?:password|passcode|one[- ]time code|otp|security code|login)\b", re.I
 )
-EDUCATIONAL_CONTEXT = re.compile(r"\b(awareness|security advice|example of (?:a )?scam|spot (?:a )?scam|protect yourself|phishing is|scammers? may)\b", re.I)
+EDUCATIONAL_CONTEXT = re.compile(
+    r"\b(?:security\s+(?:awareness|training)(?:\s+reminder|\s+training|\s+example)?|awareness\s+(?:reminder|session)|security\s+advice|"
+    r"example\s+of\s+(?:a\s+)?scam|quoted?\s+(?:the\s+)?(?:scam|message|text)|spot\s+(?:a\s+)?scam|"
+    r"protect\s+yourself|phishing\s+is|scammers?\s+may)\b",
+    re.I,
+)
 PROTECTIVE_ADVICE = re.compile(
     r"\b(?:never|do not|don't|dont|avoid|remember|be careful|stay safe|report)\b"
     r"[^.?!]{0,140}\b(?:password|passcode|code|otp|link|bank|account|payment|sender|scam|details)\b",
     re.I,
 )
+REPORT_SECURITY_ADVICE = re.compile(
+    r"\b(?:report|forward)\b[^.?!]{0,100}\b(?:suspicious|phishing|scam)\b"
+    r"[^.?!]{0,100}\b(?:email|message|text|website|link)s?\b"
+    r"[^.?!]{0,80}\b(?:to|using)\b[^.?!]{0,60}\b(?:it|security|fraud|support)\s*(?:team|desk|department)?\b",
+    re.I,
+)
 NEGATED_REQUEST = re.compile(
     r"\b(?:no|not|never|did\s+not|didn't|was\s+not|wasn't|is\s+not|isn't)\b"
     r"[^.?!]{0,80}\b(?:request(?:ed)?|approv(?:e|ed|al)|authori[sz](?:e|ed|ation)|transfer|payment|login|code|required)\b"
-    r"|\b(?:request(?:ed)?|approv(?:e|ed|al)|authori[sz](?:e|ed|ation)|transfer|payment|login|code)\b"
-    r"[^.?!]{0,55}\bnot\b",
+    r"|\b(?:request|approval|authorisation|transfer|payment|login|code)\b"
+    r"\s+(?:is|was|are|were)?\s*not\s+(?:required|requested|approved|authorised|needed)\b"
+    r"|\b(?:did\s+not|didn't|never)\s+ask\b[^.?!;]{0,55}\b(?:send|pay|transfer|share|provide)\b",
     re.I,
 )
 TRUSTED_PATH = re.compile(
@@ -43,9 +57,9 @@ TRUSTED_PATH = re.compile(
     re.I,
 )
 AUTH_CODE_REQUEST = re.compile(
-    r"\b(?:reply|send|share|tell|give|provide|forward|enter|type|confirm|verify)\b"
-    r"[^.?!]{0,100}\b(?:six[- ]digit|\d[- ]digit|security|verification|authentication|one[- ]time|otp|passcode|access|login)"
-    r"\s*(?:code|number|approval|request|token)?\b",
+    r"\b(?:reply|send|share|tell|give|provide|forward|enter|type|confirm|verify|need|needs|require|requires)\b"
+    r"[^.?!]{0,100}\b(?:six[- ]digit\s+(?:code|number)|\d[- ]digit\s+(?:code|number)|security\s+code|verification\s+(?:code|number)|"
+    r"authentication\s+(?:code|number|token)|one[- ]time\s+(?:code|password)|otp|passcode|access\s+code|login\s+(?:approval|request))\b",
     re.I,
 )
 LOGIN_APPROVAL = re.compile(
@@ -53,9 +67,25 @@ LOGIN_APPROVAL = re.compile(
     r"|\b(?:approve|authori[sz]e|allow)\b[^.?!]{0,80}\b(?:login|sign[- ]?in|account)\b",
     re.I,
 )
-SUPPORT_IMPERSONATION = re.compile(
+SUPPORT_IDENTITY = re.compile(
     r"\b(?:it|technical|account|customer|service|help)\s*(?:support|helpdesk|desk|team)\b"
     r"|\b(?:helpdesk|support desk|support team|technical support)\b",
+    re.I,
+)
+FAMILY_IDENTITY = re.compile(
+    r"\b(?:hi|hello|hey)?\s*(?:mum|mom|mummy|dad|daddy|son|daughter|brother|sister|nan|grandma|grandad)\b"
+    r"|\b(?:your\s+)?(?:son|daughter|brother|sister|child|friend)\s+(?:here|speaking)\b",
+    re.I,
+)
+CHANGED_CONTACT = re.compile(
+    r"\b(?:lost|broke|damaged|replaced|changed|stolen)\b[^.?!]{0,55}\b(?:phone|mobile|handset|sim|number)\b"
+    r"|\b(?:this\s+is\s+)?(?:my\s+)?(?:new|different|replacement|temporary)\s+(?:phone|mobile|number|contact)\b"
+    r"|\b(?:new|different|replacement)\s+sim\b",
+    re.I,
+)
+DISCOURAGED_VERIFICATION = re.compile(
+    r"\b(?:do\s+not|don't|dont|cannot|can't|cant)\b[^.?!]{0,65}\b(?:call|contact|phone|ring|tell|speak\s+to|check\s+with|verify)\b"
+    r"|\b(?:keep\s+(?:this|it)\s+secret|do\s+not\s+tell\s+anyone|don't\s+tell\s+anyone)\b",
     re.I,
 )
 STOP_TRANSFER_CONTEXT = re.compile(
@@ -64,15 +94,13 @@ STOP_TRANSFER_CONTEXT = re.compile(
 )
 
 SIGNAL_RULES = [
-    ("urgency", re.compile(r"\b(urgent(?:ly)?|immediately|act now|final warning|today|within\s+\d+\s*(?:minutes?|hours?)|expires?\s+(?:today|soon)|before\s+\d+\s*(?:minutes?|hours?))\b", re.I), "The message uses a time limit or pressure to make a quick decision more likely."),
+    ("urgency", re.compile(r"\b(urgent(?:ly)?|immediately|act now|final warning|today|tonight|within\s+\d+\s*(?:minutes?|hours?)|expires?\s+(?:today|soon)|before\s+(?:midnight|\d+\s*(?:minutes?|hours?)))\b", re.I), "The message uses a time limit or pressure to make a quick decision more likely."),
     ("credentials", re.compile(r"\b(?:send|share|enter|provide|confirm|verify|update|reset|submit|type|need|needs|require|required|requires)\b[^.?!]{0,80}\b(password|passcode|one[- ]time code|otp|security code|login details|sign[- ]in details)\b|\b(password|passcode|one[- ]time code|otp|security code)\b[^.?!]{0,50}\b(?:required|needed|confirm|verify|send|share|enter|now|immediately)\b", re.I), "It asks for a password, one-time code or other security credential."),
-    ("payment", re.compile(r"\b(?:pay|send|transfer|authori[sz]e|settle|confirm)\b[^.?!]{0,90}(?:£\s?\d[\d,.]*|\$\s?\d[\d,.]*|€\s?\d[\d,.]*|payment|bank details|card details|account number|fee|charge)|(?:£\s?\d[\d,.]*|\$\s?\d[\d,.]*|€\s?\d[\d,.]*)[^.?!]{0,70}\b(?:send|pay|transfer|urgent|now|today|account)\b|\b(?:payment|bank details|card details|fee|charge)\b[^.?!]{0,50}\b(?:required|needed|confirm|pay|send|update)\b", re.I), "It requests or pressures the reader to make a payment or disclose payment details."),
+    ("payment", re.compile(r"\b(?:pay|send|transfer|authori[sz]e|settle|confirm|enter|provide|share)\b[^.?!;]{0,90}(?:£\s?\d[\d,.]*|\$\s?\d[\d,.]*|€\s?\d[\d,.]*|payment|bank details|card details|account number|fee|charge)|(?:£\s?\d[\d,.]*|\$\s?\d[\d,.]*|€\s?\d[\d,.]*)[^.?!;]{0,70}\b(?:send|pay|transfer|urgent|now|today|account)\b|\b(?:payment|bank details|card details|fee|charge)\b[^.?!;]{0,50}\b(?:required|needed|confirm|pay|send|update)\b", re.I), "It requests or pressures the reader to make a payment or disclose payment details."),
     ("link", re.compile(r"(?:https?://|www\.)\S+|\b(?:click|tap|open|scan|follow)\b[^.?!]{0,45}\b(?:link|url|qr|code|button|website|portal)\b|\b(?:at|using|via|through)\s+(?:this\s+)?(?:link|url|website|portal)\b", re.I), "It directs the reader to a link, QR code or external destination."),
     ("impersonation", re.compile(r"\b(?:your\s+)?(?:bank|banking|tax office|hmrc|university|student account|nhs|health service|hospital|delivery company|parcel service|football club|ticket office|support team)\b[^.?!]{0,90}\b(?:verify|confirm|pay|send|sign|login|log in|click|open|update|claim|secure|avoid)\b|\b(?:verify|confirm|pay|send|sign|login|log in|click|open|update|claim|secure|avoid)\b[^.?!]{0,90}\b(?:bank|banking|tax office|hmrc|university|student account|nhs|health service|hospital|delivery company|parcel service|football club|ticket office|support team)\b", re.I), "It combines a trusted-service identity with a request or action."),
-    ("family_impersonation", re.compile(r"\b(?:mum|mom|dad|son|daughter|brother|sister|family|friend)\b[^.?!]{0,100}\b(?:send|transfer|lend|pay|money|£\s?\d|bank)\b|\b(?:send|transfer|lend|pay)\b[^.?!]{0,70}\b(?:mum|mom|dad|son|daughter|brother|sister|family|friend)\b", re.I), "It resembles a family or friend impersonation request involving money."),
     ("authentication_code", AUTH_CODE_REQUEST, "It asks the reader to disclose or enter an authentication code, approval or verification number."),
     ("login_approval", LOGIN_APPROVAL, "It asks the reader to approve or authorise a login; verify that request independently."),
-    ("support_impersonation", SUPPORT_IMPERSONATION, "It presents itself as a support or helpdesk contact; verify that identity independently."),
 ]
 
 LEGITIMATE_CONTEXT = [
@@ -186,6 +214,7 @@ def _actionable_text(text: str) -> tuple[str, bool, bool]:
     for clause in clauses or [text]:
         clause_protective = bool(
             PROTECTIVE_ADVICE.search(clause)
+            or REPORT_SECURITY_ADVICE.search(clause)
             or NEGATED_SECURITY.search(clause)
             or NEGATED_REQUEST.search(clause)
             or TRUSTED_PATH.search(clause)
@@ -214,10 +243,46 @@ def contextual_analysis(text: str, probability: float, model: ScamShieldModel) -
         phrase = _first_phrase(pattern, actionable)
         if key == "payment" and phrase and AUTH_CODE_REQUEST.search(actionable) and STOP_TRANSFER_CONTEXT.search(actionable):
             phrase = ""
+        # A single direct request for a password and verification code is one
+        # credential tactic, not two inflated pieces of evidence.
+        if key == "authentication_code" and phrase and "credentials" in matched:
+            phrase = ""
         if phrase:
             matched.append(key)
             evidence.append({"phrase": phrase, "explanation": message})
-        score += {"urgency": .18, "credentials": .45, "payment": .28, "link": .12, "impersonation": .12, "family_impersonation": .30, "authentication_code": .38, "login_approval": .30, "support_impersonation": .10}[key]
+            score += {"urgency": .18, "credentials": .45, "payment": .28, "link": .12, "impersonation": .12, "authentication_code": .38, "login_approval": .30}[key]
+
+    family_match = FAMILY_IDENTITY.search(clean)
+    changed_match = CHANGED_CONTACT.search(clean)
+    discouraged_match = DISCOURAGED_VERIFICATION.search(actionable)
+    family_payment_context = bool(family_match and changed_match and "payment" in matched)
+    if family_payment_context:
+        family_phrase = re.sub(r"\s+", " ", family_match.group(0)).strip()
+        changed_phrase = re.sub(r"\s+", " ", changed_match.group(0)).strip()
+        matched.extend(["family_impersonation", "changed_contact"])
+        evidence.extend([
+            {"phrase": family_phrase, "explanation": "The sender claims a family identity as part of a request involving money."},
+            {"phrase": changed_phrase, "explanation": "The sender says their usual contact details have changed, which makes independent checking especially important."},
+        ])
+        score += 0.34
+    if discouraged_match:
+        discouraged_phrase = re.sub(r"\s+", " ", discouraged_match.group(0)).strip()
+        matched.append("discouraged_verification")
+        evidence.append({
+            "phrase": discouraged_phrase,
+            "explanation": "It discourages checking the request through another contact route.",
+        })
+        score += 0.24
+
+    support_match = SUPPORT_IDENTITY.search(actionable)
+    support_action = any(key in matched for key in ("credentials", "authentication_code", "login_approval", "payment", "link"))
+    if support_match and support_action:
+        matched.append("support_impersonation")
+        evidence.append({
+            "phrase": re.sub(r"\s+", " ", support_match.group(0)).strip(),
+            "explanation": "A support or helpdesk identity is paired with a sensitive action request; verify that identity independently.",
+        })
+        score += 0.10
     if (protective or educational) and not actionable:
         score -= 0.45
     if "credentials" in matched and ("urgency" in matched or "impersonation" in matched):
@@ -249,9 +314,11 @@ def contextual_analysis(text: str, probability: float, model: ScamShieldModel) -
     else:
         label, band = "Few warning signs detected", "Lower caution"
         action = "No strong scam pattern was detected. This does not prove authenticity; continue without sharing sensitive information until the request is independently verified."
+    if family_payment_context:
+        action = "Do not transfer money yet. Contact the family member through a number or route you previously trusted and confirm the request independently."
     if not evidence:
         evidence = [{"phrase": "No specific scam phrase detected", "explanation": "The screening rules found no strong, contextual warning signal in this message."}]
-    reasons = [f"“{item['phrase']}” — {item['explanation']}" for item in evidence[:4]]
+    reasons = [f"“{item['phrase']}” — {item['explanation']}" for item in evidence[:6]]
     return {
         "label": label,
         "band": band,
@@ -259,10 +326,10 @@ def contextual_analysis(text: str, probability: float, model: ScamShieldModel) -
         "risk_score": score,
         "score_meaning": "Screening signal, not a calibrated probability or proof of fraud.",
         "reasons": reasons,
-        "evidence": evidence[:4],
+        "evidence": evidence[:6],
         "signals": matched,
         "action": action,
-        "model_version": "contextual-baseline-v4",
+        "model_version": MODEL_VERSION,
     }
 
 

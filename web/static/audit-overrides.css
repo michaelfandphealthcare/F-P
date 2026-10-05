@@ -298,3 +298,31 @@ button:disabled, input:disabled, textarea:disabled { opacity:.65; color:#aec2cf 
 @media (prefers-reduced-motion: reduce) {
   .conversation-result.is-ready, .conversation-result.is-ready .conversation-observation { animation:none !important; opacity:1 !important; transform:none !important; }
 }
+
+/* Final evidence workflow and contrast pass. */
+.lab-grid { align-items:start !important; }
+.upload-card { height:auto !important; align-self:start !important; }
+.visual-result { padding:20px !important; background:#122638 !important; color:#aec2cf !important; }
+.visual-result h3, .visual-result h4, .visual-result li { color:#e3edf3 !important; }
+.visual-action { padding:14px 16px !important; border:1px solid #35566a !important; border-left:4px solid #63d6c6 !important; border-radius:10px !important; background:#0b1d2b !important; color:#e3edf3 !important; }
+.visual-boundary { display:block; margin-top:12px; color:#aec2cf !important; }
+.ocr-status { min-height:44px; padding:11px 13px; border-left:4px solid #4b7185 !important; }
+.ocr-status[data-state="ready"], .ocr-status[data-state="complete"] { border-left-color:#63d6c6 !important; color:#c8f4ed !important; }
+.ocr-status[data-state="extracting"], .ocr-status[data-state="analysing"] { border-left-color:#f3b94f !important; color:#f7dda0 !important; }
+.ocr-status[data-state="error"] { border-left-color:#ff7c72 !important; color:#ffd0cc !important; }
+.image-preview[role="button"] { cursor:zoom-in; }
+.image-preview[role="button"]:focus-visible { outline:3px solid #63d6c6; outline-offset:4px; }
+.evaluation-summary-stats { flex-wrap:wrap; }
+.evaluation-summary-stats > span { min-width:110px; }
+.challenge-failures { display:grid; gap:8px; }
+.challenge-failures > strong { margin-top:8px; color:#e3edf3; }
+.challenge-failures p { margin:0; padding:9px 11px; border-left:3px solid #63d6c6; background:#0b1d2b; color:#aec2cf; }
+.methodology-disclosure a { color:#8be7da !important; }
+@media (max-width:800px) {
+  .lab-grid { grid-template-columns:1fr !important; }
+  .annotation-grid { grid-template-columns:minmax(0,1fr) !important; }
+  .annotation-grid label { min-width:0; overflow-wrap:anywhere; }
+  .preview-card, .upload-card { min-width:0; }
+  .evaluation-summary-stats > span { min-width:calc(50% - 8px); }
+  .journey-controls button, .visual-example-btn, .ocr-btn, .ocr-use, .text-button { min-height:44px; }
+}

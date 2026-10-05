@@ -23,6 +23,48 @@ let extractedText = '';
 let selectedExampleText = '';
 let analysisRequestId = 0;
 let visualAnalysisRequestId = 0;
+let scannerController = null;
+let visualController = null;
+let lightboxReturnFocus = null;
+
+function setEvidenceState(state, messageText) {
+  const status = document.getElementById('ocrStatus');
+  const profile = document.getElementById('profileStatus');
+  document.querySelector('.evidence-view')?.setAttribute('data-evidence-state', state);
+  if (status) {
+    status.dataset.state = state;
+    status.textContent = messageText || '';
+  }
+  if (profile) {
+    const labels = {idle:'Waiting', ready:'Ready', extracting:'Extracting', analysing:'Analysing', complete:'Complete', error:'Needs attention'};
+    profile.textContent = labels[state] || state;
+  }
+}
+
+async function analyseTextRequest(text, controller, timeoutMs = 12000) {
+  const timeout = window.setTimeout(() => controller.abort('timeout'), timeoutMs);
+  try {
+    const response = await fetch('/api/analyse', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({text}),
+      signal: controller.signal,
+    });
+    const raw = await response.text();
+    let data;
+    try { data = JSON.parse(raw); } catch { throw new Error('The service returned an unexpected response. Please try again.'); }
+    if (!response.ok) throw new Error(data.error || 'Unable to analyse this evidence.');
+    return data;
+  } catch (error) {
+    if (controller.signal.aborted) {
+      if (controller.signal.reason === 'timeout') throw new Error('The analysis timed out. Check your connection and try again.');
+      throw new DOMException('The previous analysis was cancelled.', 'AbortError');
+    }
+    throw error;
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
 
 function openLightbox() {
   const image = imagePreview?.querySelector('img');
@@ -31,9 +73,22 @@ function openLightbox() {
   lightboxImage.alt = image.alt || 'Full-size evidence preview';
   imageLightbox.classList.remove('hidden');
   document.body.classList.add('lightbox-open');
+  lightboxReturnFocus = document.activeElement;
+  closeLightbox?.focus();
 }
-function closeImageLightbox() { imageLightbox?.classList.add('hidden'); document.body.classList.remove('lightbox-open'); }
+function closeImageLightbox() {
+  if (imageLightbox?.classList.contains('hidden')) return;
+  imageLightbox.classList.add('hidden');
+  document.body.classList.remove('lightbox-open');
+  lightboxReturnFocus?.focus?.();
+}
 imagePreview?.addEventListener('click', openLightbox);
+imagePreview?.addEventListener('keydown', event => {
+  if ((event.key === 'Enter' || event.key === ' ') && imagePreview.querySelector('img')) {
+    event.preventDefault();
+    openLightbox();
+  }
+});
 closeLightbox?.addEventListener('click', closeImageLightbox);
 imageLightbox?.addEventListener('click', event => { if (event.target === imageLightbox) closeImageLightbox(); });
 document.addEventListener('keydown', event => { if (event.key === 'Escape') closeImageLightbox(); });
@@ -90,24 +145,39 @@ function renderChallengeEvaluation(evaluation) {
   const metrics = evaluation.metrics || {};
   const matrix = metrics.confusion_matrix || {};
   const failures = evaluation.failure_examples || [];
+  const resolved = evaluation.resolved_regressions || [];
+  const dataset = evaluation.dataset || {};
   const rows = [['Precision', metrics.precision || 0], ['Recall', metrics.recall || 0], ['F1', metrics.f1 || 0]];
-  root.innerHTML = `<div class="challenge-copy"><span class="chart-kicker">Separate robustness check</span><h2>Broader challenge set</h2><p>${escapeHtml(evaluation.test_rows)} author-created messages · ${escapeHtml(evaluation.class_distribution?.phishing || 0)} scam · ${escapeHtml(evaluation.class_distribution?.legitimate || 0)} legitimate</p><small>This set was not used for training. It is broader than the held-out set, but remains hand-authored and is not representative of real-world prevalence.</small></div><div class="challenge-bar-chart" role="img" aria-label="Challenge set performance: precision ${Math.round((metrics.precision || 0) * 100)} percent, recall ${Math.round((metrics.recall || 0) * 100)} percent, F1 ${Math.round((metrics.f1 || 0) * 100)} percent"><div class="percentage-axis"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>${rows.map(([label, value]) => `<div class="percentage-bar-row"><b>${label}</b><div class="percentage-track"><span class="percentage-fill" style="width:${Math.round(value * 100)}%"></span></div><strong>${Math.round(value * 100)}%</strong></div>`).join('')}</div><div class="challenge-error-summary"><span><b>${matrix.false_positive || 0}</b><small>false alarms</small></span><span><b>${matrix.false_negative || 0}</b><small>missed scams</small></span></div><div class="challenge-failures"><strong>Observed failure cases</strong>${failures.map(item => `<p><b>${escapeHtml(item.scenario)}</b> — ${escapeHtml(item.summary)}</p>`).join('')}</div><details class="chart-data-table"><summary>View accessible data table</summary><table><caption>Broader challenge-set performance</caption><thead><tr><th>Measure</th><th>Value</th></tr></thead><tbody>${rows.map(([label, value]) => `<tr><th>${label}</th><td>${Math.round(value * 100)}%</td></tr>`).join('')}<tr><th>False alarms</th><td>${matrix.false_positive || 0}</td></tr><tr><th>Missed scams</th><td>${matrix.false_negative || 0}</td></tr></tbody></table></details>`;
+  const failureCopy = failures.length ? failures.map(item => `<p><b>${escapeHtml(item.scenario)}</b> — expected ${escapeHtml(item.expected)}, received ${escapeHtml(item.actual)} at score ${escapeHtml(item.score_0_100)}/100.</p>`).join('') : '<p>No errors were observed in this run. This small authored set is not proof of general reliability.</p>';
+  root.innerHTML = `<div class="challenge-copy"><span class="chart-kicker">Development regression set</span><h2>Broader challenge checks</h2><p>${escapeHtml(dataset.test_rows || 0)} author-created messages · ${escapeHtml(dataset.class_distribution?.phishing || 0)} scam · ${escapeHtml(dataset.class_distribution?.legitimate || 0)} legitimate</p><small>${escapeHtml(evaluation.dataset_role || 'This development set is not an independent final test set.')}</small></div><div class="challenge-bar-chart" role="img" aria-label="Challenge set performance: precision ${Math.round((metrics.precision || 0) * 100)} percent, recall ${Math.round((metrics.recall || 0) * 100)} percent, F1 ${Math.round((metrics.f1 || 0) * 100)} percent"><div class="percentage-axis"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>${rows.map(([label, value]) => `<div class="percentage-bar-row"><b>${label}</b><div class="percentage-track"><span class="percentage-fill" style="width:${Math.round(value * 100)}%"></span></div><strong>${Math.round(value * 100)}%</strong></div>`).join('')}</div><div class="challenge-error-summary"><span><b>${matrix.false_positive || 0}</b><small>false alarms</small></span><span><b>${matrix.false_negative || 0}</b><small>missed scams</small></span></div><div class="challenge-failures"><strong>Current error analysis</strong>${failureCopy}${resolved.length ? `<strong>Resolved regression cases</strong>${resolved.map(item => `<p><b>${escapeHtml(item.case)}</b> — ${escapeHtml(item.previous)} Current: ${escapeHtml(item.current)}</p>`).join('')}` : ''}</div><details class="chart-data-table"><summary>View accessible data table</summary><table><caption>Development challenge-set performance</caption><thead><tr><th>Measure</th><th>Value</th></tr></thead><tbody>${rows.map(([label, value]) => `<tr><th>${label}</th><td>${Math.round(value * 100)}%</td></tr>`).join('')}<tr><th>False alarms</th><td>${matrix.false_positive || 0}</td></tr><tr><th>Missed scams</th><td>${matrix.false_negative || 0}</td></tr></tbody></table></details>`;
 }
 
 if (imageInput) imageInput.addEventListener('change', () => {
   const file = imageInput.files[0];
   if (!file) return;
+  visualController?.abort('evidence changed');
+  visualAnalysisRequestId += 1;
   selectedExampleText = '';
+  selectedImageData = null;
+  extractedText = '';
   visualResult?.classList.add('hidden');
+  document.getElementById('ocrText').value = '';
+  useOcrBtn?.classList.add('hidden');
+  annotationChecks.forEach(check => { check.checked = false; });
+  document.getElementById('annotationResult').textContent = 'Select visible features to generate an explainable visual-risk summary.';
   if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
     document.getElementById('imageMeta').textContent = 'Unsupported file type. Choose a PNG, JPG or WebP screenshot.';
     imageInput.value = '';
+    setEvidenceState('error', 'Unsupported file type. Choose a PNG, JPG or WebP screenshot.');
     return;
   }
   if (file.size > 8 * 1024 * 1024) {
     document.getElementById('imageMeta').textContent = 'Image is larger than 8 MB. Choose a smaller redacted sample.';
+    imageInput.value = '';
+    setEvidenceState('error', 'The file is larger than the 8 MB limit. Choose a smaller redacted screenshot.');
     return;
   }
+  setEvidenceState('extracting', 'Checking the selected image…');
   const reader = new FileReader();
   reader.onload = event => {
     selectedImageData = event.target.result;
@@ -115,39 +185,49 @@ if (imageInput) imageInput.addEventListener('change', () => {
     img.onload = () => {
       const ratio = (img.width / img.height).toFixed(2);
       document.getElementById('imagePreview').innerHTML = `<img src="${event.target.result}" alt="Uploaded redacted fraud evidence preview">`;
+      imagePreview.tabIndex = 0;
+      imagePreview.setAttribute('role', 'button');
+      imagePreview.setAttribute('aria-label', 'Open uploaded evidence image at full size');
       document.getElementById('imageMeta').innerHTML = `<strong>${escapeHtml(file.name)}</strong><span>${img.width} × ${img.height}px · ${(file.size / 1024).toFixed(0)} KB · aspect ratio ${ratio}</span>`;
-      document.getElementById('profileStatus').textContent = 'Image ready';
+      setEvidenceState('ready', 'Image ready. Select Extract visible text to run browser-local OCR.');
       ocrBtn.disabled = false;
       removeImageBtn?.classList.remove('hidden');
       document.getElementById('visualFlags').innerHTML = '<span class="flag neutral">Image preview ready</span><span class="flag neutral">OCR ready</span><span class="flag neutral">Manual annotation available</span>';
     };
+    img.onerror = () => {
+      selectedImageData = null;
+      imageInput.value = '';
+      ocrBtn.disabled = true;
+      setEvidenceState('error', 'This image could not be opened. It may be corrupt; choose another PNG, JPG or WebP file.');
+    };
     img.src = event.target.result;
   };
+  reader.onerror = () => setEvidenceState('error', 'The image could not be read from this device. Choose it again or try another file.');
   reader.readAsDataURL(file);
 });
 
 if (ocrBtn) ocrBtn.addEventListener('click', async () => {
   if (!selectedImageData) {
-    document.getElementById('ocrStatus').textContent = 'Choose an image before extracting visible text.';
+    setEvidenceState('error', 'Choose an image before extracting visible text.');
     return;
   }
   if (selectedExampleText) {
     extractedText = selectedExampleText;
     document.getElementById('ocrText').value = extractedText;
-    document.getElementById('ocrStatus').textContent = 'Demo text extracted from the visible synthetic screenshot. Review it before analysis.';
+    setEvidenceState('ready', 'Pre-supplied demonstration text is ready. It is not a fresh OCR result; review it before analysis.');
     document.getElementById('visualFlags').innerHTML = '<span class="flag positive">Readable text found</span><span class="flag neutral">Synthetic example</span><span class="flag neutral">Review warning signs below</span>';
     useOcrBtn.classList.remove('hidden');
     return;
   }
   if (!window.Tesseract) {
-    document.getElementById('ocrStatus').textContent = 'Browser OCR is unavailable in this deployment. Use the visible-text box or manual annotation; no image was sent anywhere.';
+    setEvidenceState('error', 'Browser-local OCR is unavailable. You can type the visible text manually; the image was not sent to the server.');
     return;
   }
   ocrBtn.disabled = true;
-  document.getElementById('ocrStatus').textContent = 'Reading visible text locally...';
+  setEvidenceState('extracting', 'Reading visible text locally…');
   try {
     const result = await Tesseract.recognize(selectedImageData, 'eng', { logger: message => {
-      if (message.status === 'recognizing text') document.getElementById('ocrStatus').textContent = `Reading visible text locally... ${Math.round(message.progress * 100)}%`;
+      if (message.status === 'recognizing text') setEvidenceState('extracting', `Reading visible text locally… ${Math.round(message.progress * 100)}%`);
     }});
     const text = result.data.text.trim().replace(/\n{3,}/g, '\n\n');
     const words = text.split(/\s+/).filter(word => /[A-Za-z]{2,}/.test(word));
@@ -157,48 +237,54 @@ if (ocrBtn) ocrBtn.addEventListener('click', async () => {
     if (useful) {
       extractedText = text;
       document.getElementById('ocrText').value = text;
-      document.getElementById('ocrStatus').textContent = `OCR complete (${Math.round(confidence)}% confidence). Review the extracted text before using it.`;
+      setEvidenceState('ready', `OCR complete (${Math.round(confidence)}% confidence). Review and edit the text before analysis.`);
       document.getElementById('visualFlags').innerHTML = '<span class="flag positive">Readable text found</span><span class="flag neutral">Review warning signs below</span>';
       useOcrBtn.classList.remove('hidden');
     } else {
       extractedText = '';
       document.getElementById('ocrText').value = '';
-      document.getElementById('ocrStatus').textContent = 'This does not look like a readable email, SMS or login-page screenshot. Try a clearer scam screenshot; portraits and ordinary photos cannot be analysed for phishing text.';
+      setEvidenceState('error', 'No usable text was found. Try a clearer email, SMS or login-page screenshot, or enter visible text manually.');
       document.getElementById('visualFlags').innerHTML = '<span class="flag warning">No readable scam text</span><span class="flag neutral">Use a message screenshot</span>';
       useOcrBtn.classList.add('hidden');
     }
   } catch (err) {
-    document.getElementById('ocrStatus').textContent = 'OCR could not read this image. Manual annotation remains available.';
+    setEvidenceState('error', 'OCR could not process this image. Try a clearer screenshot or enter the visible text manually.');
   } finally { ocrBtn.disabled = false; }
 });
 
 if (useOcrBtn) useOcrBtn.addEventListener('click', async () => {
   extractedText = document.getElementById('ocrText').value.trim();
-  if (!extractedText) { document.getElementById('ocrStatus').textContent = 'There is no extracted text to analyse. Review or enter visible message text first.'; return; }
+  if (!extractedText) { setEvidenceState('error', 'There is no text to analyse. Extract, review or enter visible message text first.'); return; }
   const requestId = ++visualAnalysisRequestId;
+  visualController?.abort('new analysis');
+  visualController = new AbortController();
   useOcrBtn.disabled = true;
   useOcrBtn.textContent = 'Analysing image evidence...';
   visualResult.classList.add('hidden');
-  document.getElementById('ocrStatus').textContent = 'Analysing the current extracted text. Any previous image result has been cleared.';
+  setEvidenceState('analysing', 'Analysing the current edited text. The previous result has been cleared.');
   try {
-    const response = await fetch('/api/analyse', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({text: extractedText}) });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || 'Unable to analyse the extracted evidence.');
+    const data = await analyseTextRequest(extractedText, visualController);
     if (requestId !== visualAnalysisRequestId || extractedText !== document.getElementById('ocrText').value.trim()) return;
     const reasons = data.reasons.map(reason => `<li><span>✓</span>${escapeHtml(reason)}</li>`).join('');
-    visualResult.innerHTML = `<div class="visual-result-head"><div><span class="eyebrow">Image evidence result</span><h3>${escapeHtml(data.label)}</h3><span class="band">${escapeHtml(data.band)}</span></div></div><h4>Why it was flagged</h4><ul>${reasons}</ul><h4>Safer next step</h4><p class="visual-action">${escapeHtml(data.action)}</p><small class="visual-boundary">${escapeHtml(data.score_meaning || 'This result is based on visible text from the selected image and is not proof of fraud.')}</small>`;
+    const findingHeading = data.label === 'Few warning signs detected' ? 'What the analysis found' : 'Signals requiring attention';
+    visualResult.innerHTML = `<div class="visual-result-head"><div><span class="eyebrow">Image evidence result</span><h3>${escapeHtml(data.label)}</h3><span class="band">${escapeHtml(data.band)}</span></div></div><h4>${findingHeading}</h4><ul>${reasons}</ul><h4>Safer next step</h4><p class="visual-action">${escapeHtml(data.action)}</p><small class="visual-boundary">${escapeHtml(data.score_meaning || 'This result is based on the current visible text and is not proof of fraud.')}</small>`;
     visualResult.classList.remove('hidden');
+    setEvidenceState('complete', 'Analysis complete. The result below matches the current edited text.');
   } catch (err) {
+    if (err.name === 'AbortError') return;
     visualResult.classList.add('hidden');
-    document.getElementById('ocrStatus').textContent = `${err.message} No result is being shown for this image.`;
+    setEvidenceState('error', `${err.message} No result is being shown. Select Analyse image evidence to retry.`);
   }
   finally { useOcrBtn.disabled = false; useOcrBtn.innerHTML = 'Analyse image evidence <span aria-hidden="true">→</span>'; }
 });
 
 document.getElementById('ocrText')?.addEventListener('input', () => {
+  visualController?.abort('evidence edited');
   visualAnalysisRequestId += 1;
   visualResult?.classList.add('hidden');
-  document.getElementById('ocrStatus').textContent = 'Edited text has not been analysed yet.';
+  const hasText = document.getElementById('ocrText').value.trim().length > 0;
+  useOcrBtn?.classList.toggle('hidden', !hasText);
+  setEvidenceState(hasText ? 'ready' : 'error', hasText ? 'Edited text is ready but has not been analysed yet.' : 'Enter or extract visible text before analysis.');
 });
 
 annotationChecks.forEach(check => check.addEventListener('change', () => {
@@ -222,9 +308,10 @@ function renderEvaluation(evaluation) {
   const root = document.getElementById('evaluationPanel');
   if (!root || !evaluation) return;
   const metrics = evaluation.metrics || {};
-  const classes = evaluation.class_distribution || {};
+  const dataset = evaluation.dataset || {};
+  const classes = dataset.class_distribution || {};
   const errors = (metrics.false_positives || 0) + (metrics.missed_scams || 0);
-  root.innerHTML = `<div class="evaluation-summary-stats"><span><b>${escapeHtml(evaluation.test_rows)}</b><small>evaluated</small></span><span><b>${escapeHtml(classes.phishing || 0)}</b><small>scams</small></span><span><b>${escapeHtml(classes.legitimate || 0)}</b><small>legitimate</small></span><span><b>${errors}</b><small>errors in this split</small></span></div>`;
+  root.innerHTML = `<div class="evaluation-summary-stats"><span><b>${escapeHtml(dataset.test_rows || 0)}</b><small>evaluated</small></span><span><b>${escapeHtml(classes.phishing || 0)}</b><small>scams</small></span><span><b>${escapeHtml(classes.legitimate || 0)}</b><small>legitimate</small></span><span><b>${errors}</b><small>errors in this split</small></span><span><b>${Math.round((evaluation.decision_threshold || .36) * 100)}/100</b><small>decision threshold</small></span></div>`;
   const dateNode = document.getElementById('dashboardEvaluationDate');
   const modelNode = document.getElementById('dashboardModelVersion');
   const datasetNode = document.getElementById('dashboardDatasetVersion');
@@ -233,7 +320,7 @@ function renderEvaluation(evaluation) {
     dateNode.textContent = Number.isNaN(parsed.getTime()) ? evaluation.evaluation_date : new Intl.DateTimeFormat('en-GB', { day:'numeric', month:'long', year:'numeric', timeZone:'UTC' }).format(parsed);
   }
   if (modelNode) modelNode.textContent = evaluation.model_version || 'Not recorded';
-  if (datasetNode) datasetNode.textContent = evaluation.dataset_version || 'Not recorded';
+  if (datasetNode) datasetNode.textContent = dataset.version || 'Not recorded';
 }
 
 function renderMeasuredCharts(evaluation) {
@@ -292,17 +379,18 @@ function renderMeasuredCharts(evaluation) {
       if (scenarioTable) scenarioTable.innerHTML = '';
     } else {
       scenarioChart.setAttribute('role', 'img');
-      scenarioChart.setAttribute('aria-label', records.map(record => `${record.scenario}: ${Math.round((record.risk_score || 0) * 100)} percent, ${record.label === 'phishing' ? 'scam example' : 'legitimate example'}`).join('; '));
+      const threshold = Math.round((evaluation.decision_threshold || .36) * 100);
+      scenarioChart.setAttribute('aria-label', records.map(record => `${record.scenario}: score ${record.score_0_100 ?? Math.round((record.risk_score || 0) * 100)} out of 100, ${record.label === 'phishing' ? 'scam example' : 'legitimate example'}`).join('; '));
       scenarioChart.className = 'scenario-score-chart';
-      scenarioChart.innerHTML = `<div class="scenario-score-legend"><span><i class="legend-swatch legitimate"></i>Legitimate example</span><span><i class="legend-swatch scam"></i>Scam example</span><span><i class="legend-threshold"></i>Decision threshold (35%)</span></div><div class="scenario-score-axis"><span></span><span></span><div><i>0%</i><i class="threshold-tick">35%</i><i>50%</i><i>75%</i><i>100%</i></div><span></span></div>${records.map(record => {
-        const score = Math.round((record.risk_score || 0) * 100);
+      scenarioChart.innerHTML = `<div class="scenario-score-legend"><span><i class="legend-swatch legitimate"></i>Legitimate example</span><span><i class="legend-swatch scam"></i>Scam example</span><span><i class="legend-threshold"></i>Decision threshold (${threshold}/100)</span></div><div class="scenario-score-axis"><span></span><span></span><div><i>0</i><i class="threshold-tick">${threshold}</i><i>50</i><i>75</i><i>100</i></div><span></span></div>${records.map(record => {
+        const score = record.score_0_100 ?? Math.round((record.risk_score || 0) * 100);
         const actualScam = record.label === 'phishing';
         const predictedScam = record.prediction === 1;
         const correct = actualScam === predictedScam;
         const tone = correct ? (actualScam ? 'scam' : 'legitimate') : (actualScam ? 'missed' : 'false-alarm');
-        return `<div class="scenario-score-row"><b>${escapeHtml(record.scenario)}</b><small>${actualScam ? 'Scam example' : 'Legitimate example'}</small><div class="scenario-score-track"><span class="scenario-score-fill ${tone}" style="width:${score}%"></span><i class="scenario-threshold" aria-hidden="true"></i></div><strong>${score}%</strong></div>`;
-      }).join('')}<div class="chart-axis-title">Model screening score (%) · not a probability</div>`;
-      if (scenarioTable) scenarioTable.innerHTML = `<details class="chart-data-table"><summary>View accessible data table</summary><table><caption>Case-level screening scores</caption><thead><tr><th>Scenario</th><th>Actual class</th><th>Prediction</th><th>Score</th></tr></thead><tbody>${records.map(record => `<tr><th>${escapeHtml(record.scenario)}</th><td>${record.label === 'phishing' ? 'Scam' : 'Legitimate'}</td><td>${record.prediction === 1 ? 'Scam' : 'Legitimate'}</td><td>${Math.round((record.risk_score || 0) * 100)}%</td></tr>`).join('')}</tbody></table></details>`;
+        return `<div class="scenario-score-row"><b>${escapeHtml(record.scenario)}</b><small>${actualScam ? 'Scam example' : 'Legitimate example'}</small><div class="scenario-score-track"><span class="scenario-score-fill ${tone}" style="width:${score}%"></span><i class="scenario-threshold" style="left:${threshold}%" aria-hidden="true"></i></div><strong>${score}/100</strong></div>`;
+      }).join('')}<div class="chart-axis-title">Screening score (0–100) · not a calibrated probability</div>`;
+      if (scenarioTable) scenarioTable.innerHTML = `<details class="chart-data-table"><summary>View accessible data table</summary><table><caption>Case-level screening scores</caption><thead><tr><th>Scenario</th><th>Actual class</th><th>Prediction</th><th>Score (0–100)</th></tr></thead><tbody>${records.map(record => `<tr><th>${escapeHtml(record.scenario)}</th><td>${record.label === 'phishing' ? 'Scam' : 'Legitimate'}</td><td>${record.prediction === 1 ? 'Scam' : 'Legitimate'}</td><td>${record.score_0_100 ?? Math.round((record.risk_score || 0) * 100)}</td></tr>`).join('')}</tbody></table></details>`;
     }
   }
 }
@@ -325,6 +413,7 @@ function renderBars(id, values, compact = false) {
 message.addEventListener('input', () => {
   counter.textContent = `${message.value.length} / 4000`;
   analysisRequestId += 1;
+  scannerController?.abort('message edited');
   if (!resultPanel.classList.contains('empty')) {
     resultPanel.className = 'result-panel panel empty';
     resultPanel.innerHTML = '<div class="result-placeholder"><div class="shield">↻</div><h2>Result needs refreshing</h2><p>The message changed. Analyse this current text to replace the previous result.</p></div>';
@@ -377,11 +466,15 @@ visualExampleBtn?.addEventListener('click', () => {
   selectedExampleText = item.text;
   extractedText = '';
   visualResult?.classList.add('hidden');
+  visualController?.abort('example changed');
+  visualAnalysisRequestId += 1;
   document.getElementById('imagePreview').innerHTML = `<img src="${selectedImageData}" alt="Synthetic ${escapeHtml(item.label)} ${escapeHtml(item.type)} evidence example">`;
   document.getElementById('imageMeta').innerHTML = `<strong>${escapeHtml(item.asset)}</strong><span>${escapeHtml(item.type)} · synthetic ${escapeHtml(item.label)} sample</span>`;
-  document.getElementById('profileStatus').textContent = 'Example ready';
+  imagePreview.tabIndex = 0;
+  imagePreview.setAttribute('role', 'button');
+  imagePreview.setAttribute('aria-label', 'Open synthetic evidence image at full size');
   document.getElementById('visualFlags').innerHTML = `<span class="flag ${item.label === 'scam' ? 'warning' : 'positive'}">Synthetic ${escapeHtml(item.label)} example</span><span class="flag neutral">OCR ready</span><span class="flag neutral">Manual annotation available</span>`;
-  document.getElementById('ocrStatus').textContent = 'Review the visible message, then extract the text locally if required.';
+  setEvidenceState('ready', 'Synthetic example ready. Its pre-supplied demonstration text is separate from fresh-upload OCR.');
   document.getElementById('ocrText').textContent = '';
   document.getElementById('ocrText').value = '';
   ocrBtn.disabled = false;
@@ -390,21 +483,29 @@ visualExampleBtn?.addEventListener('click', () => {
 });
 
 removeImageBtn?.addEventListener('click', () => {
+  visualController?.abort('image removed');
+  visualAnalysisRequestId += 1;
   selectedImageData = null; selectedExampleText = ''; extractedText = '';
   imageInput.value = '';
   document.getElementById('imagePreview').innerHTML = '<div class="preview-placeholder">Your redacted email, SMS or login-page screenshot will appear here.</div>';
   document.getElementById('imageMeta').textContent = 'No image selected yet.';
-  document.getElementById('profileStatus').textContent = 'Waiting';
+  imagePreview.removeAttribute('tabindex');
+  imagePreview.removeAttribute('role');
+  imagePreview.removeAttribute('aria-label');
   document.getElementById('visualFlags').innerHTML = '<span>Awaiting screenshot</span>';
-  document.getElementById('ocrStatus').textContent = '';
+  setEvidenceState('idle', 'Choose a redacted screenshot to begin.');
   document.getElementById('ocrText').value = '';
   ocrBtn.disabled = true; useOcrBtn.classList.add('hidden'); visualResult?.classList.add('hidden');
   removeImageBtn.classList.add('hidden');
+  annotationChecks.forEach(check => { check.checked = false; });
+  document.getElementById('annotationResult').textContent = 'Select visible features to generate an explainable visual-risk summary.';
 });
 
 analyseBtn.addEventListener('click', async () => {
   errorBox.textContent = '';
   const requestId = ++analysisRequestId;
+  scannerController?.abort('new analysis');
+  scannerController = new AbortController();
   const submittedText = message.value.trim();
   if (!submittedText) {
     errorBox.textContent = 'Paste or type a message before analysing it.';
@@ -417,12 +518,11 @@ analyseBtn.addEventListener('click', async () => {
   resultPanel.setAttribute('aria-busy', 'true');
   resultPanel.innerHTML = '<div class="result-placeholder"><div class="shield">…</div><h2>Analysing this message</h2><p>The previous result has been cleared.</p></div>';
   try {
-    const response = await fetch('/api/analyse', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({text: submittedText}) });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || 'Unable to analyse the message.');
+    const data = await analyseTextRequest(submittedText, scannerController);
     if (requestId !== analysisRequestId || submittedText !== message.value.trim()) return;
     renderResult(data);
   } catch (err) {
+    if (err.name === 'AbortError') return;
     if (requestId === analysisRequestId) {
       errorBox.textContent = err.message;
       resultPanel.className = 'result-panel panel empty';
@@ -480,7 +580,11 @@ resultPanel.addEventListener('click', event => {
   const button = event.target.closest('[data-context]');
   if (!button) return;
   const target = resultPanel.querySelector(`#context-${button.dataset.question}`);
-  const messages = {yes:'Recorded as user-provided context: yes.', no:'Recorded as user-provided context: no.', unsure:'Recorded as user-provided context: not sure.'};
+  const messages = {
+    yes:'User-provided answer: Yes. Continue using only a contact route you found independently before acting.',
+    no:'User-provided answer: No. Do not act on the request; verify it through a previously trusted route.',
+    unsure:'User-provided answer: Not sure. Pause and verify independently before sharing information or money.',
+  };
   if (target) target.textContent = messages[button.dataset.context];
   resultPanel.querySelectorAll(`[data-question="${button.dataset.question}"]`).forEach(x => x.classList.toggle('selected', x === button));
 });
@@ -595,7 +699,7 @@ updateJourney(0);
 
 const motionToggle = document.getElementById('motionToggle');
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-let motionPausedByUser = false;
+let motionPausedByUser = localStorage.getItem('scamshield-motion-paused') === 'true';
 function updateMotionControl() {
   const systemPaused = reducedMotion.matches;
   document.body.classList.toggle('motion-paused', motionPausedByUser || systemPaused);
@@ -604,7 +708,11 @@ function updateMotionControl() {
   motionToggle.textContent = systemPaused ? 'Motion off' : motionPausedByUser ? 'Resume motion' : 'Pause motion';
   motionToggle.setAttribute('aria-label', systemPaused ? 'Background motion off due to system settings' : motionPausedByUser ? 'Resume animated backgrounds' : 'Pause animated backgrounds');
 }
-motionToggle?.addEventListener('click', () => { motionPausedByUser = !motionPausedByUser; updateMotionControl(); });
+motionToggle?.addEventListener('click', () => {
+  motionPausedByUser = !motionPausedByUser;
+  localStorage.setItem('scamshield-motion-paused', String(motionPausedByUser));
+  updateMotionControl();
+});
 reducedMotion.addEventListener?.('change', updateMotionControl);
 document.addEventListener('visibilitychange', () => document.body.classList.toggle('motion-hidden', document.hidden));
 document.body.classList.toggle('motion-hidden', document.hidden);
