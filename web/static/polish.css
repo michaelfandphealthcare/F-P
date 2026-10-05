@@ -197,7 +197,8 @@ textarea { font-size: 16px; line-height: 1.55; }
 .link-inspector-row { display:grid; grid-template-columns:1fr auto; gap:.55rem; }
 .link-inspector-row input { min-width:0; border:1px solid var(--line); border-radius:10px; padding:.7rem .8rem; font:inherit; font-size:.82rem; }
 .link-inspector-row input:focus { outline:3px solid rgba(22,179,163,.15); border-color:var(--teal); }
-.url-result { display:flex; flex-wrap:wrap; gap:.35rem .7rem; margin-top:.65rem; color:var(--ink-muted); font-size:.72rem; line-height:1.45; }
+.url-result { display:flex; flex-wrap:wrap; gap:.35rem .7rem; margin-top:.65rem; color:#456875; font-size:.72rem; line-height:1.45; }
+.url-result span { color:#456875; }
 .url-result small { width:100%; }
 .url-caution { color:#a55216; }.url-danger { color:#b42318; }.url-clear { color:#087f76; }
 .feedback-box { margin-top:1.2rem; padding:.85rem 1rem; background:#f5fafb; border:1px solid #dbe8ec; border-radius:11px; display:grid; gap:.35rem; }
