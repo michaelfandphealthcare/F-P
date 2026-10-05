@@ -68,6 +68,8 @@ async function loadDashboard() {
     if (!response.ok) throw new Error('Dashboard data is unavailable.');
     const data = await response.json();
     renderEvaluation(data.evaluation);
+    const baselineNote = document.querySelector('.methodology-disclosure .disclosure-grid > div:first-child p:nth-of-type(2)');
+    if (baselineNote) baselineNote.textContent = 'The TF-IDF-only baseline is measured on the same 12-message held-out split. It is a simple comparison point, not a production benchmark.';
     renderMeasuredCharts(data.evaluation);
     renderBars('sectorChart', data.scenarios.sector_mix);
     renderBars('signalChart', data.scenarios.warning_signals);
@@ -334,7 +336,8 @@ function renderResult(data) {
   resultPanel.className = 'result-panel panel';
   const reasons = data.reasons.map(reason => `<div class="reason"><i>✓</i><span>${escapeHtml(reason)}</span></div>`).join('');
   const reasonHeading = data.label === 'Few warning signs detected' ? 'What the analysis found' : 'Signals requiring attention';
-  resultPanel.innerHTML = `<div class="result-head"><div><div class="result-label">${escapeHtml(data.label)}</div><span class="band">${escapeHtml(data.band)}</span></div></div><div class="result-section"><h3>${reasonHeading}</h3>${reasons}</div><div class="result-section"><h3>Safer next step</h3><div class="action">${escapeHtml(data.action)}</div></div><div class="feedback-box"><strong>Help improve the research</strong><span>Was this explanation useful?</span><div><button type="button" data-feedback="helpful">Yes, helpful</button><button type="button" data-feedback="unclear">Needs improvement</button></div><small id="feedbackStatus" aria-live="polite"></small></div><p class="result-disclaimer">${escapeHtml(data.score_meaning || 'This is decision support, not proof that a message is fraudulent.')}</p>`;
+  const guided = guidedVerification(data);
+  resultPanel.innerHTML = `<div class="result-head"><div><div class="result-label">${escapeHtml(data.label)}</div><span class="band">${escapeHtml(data.band)}</span></div></div><div class="result-section"><h3>${reasonHeading}</h3>${reasons}</div><div class="result-section"><h3>Safer next step</h3><div class="action">${escapeHtml(data.action)}</div></div>${guided}<div class="feedback-box"><strong>Help improve the research</strong><span>Was this explanation useful?</span><div><button type="button" data-feedback="helpful">Yes, helpful</button><button type="button" data-feedback="unclear">Needs improvement</button></div><small id="feedbackStatus" aria-live="polite"></small></div><p class="result-disclaimer">${escapeHtml(data.score_meaning || 'This is decision support, not proof that a message is fraudulent.')}</p>`;
   resultPanel.querySelectorAll('[data-feedback]').forEach(button => button.addEventListener('click', () => {
     const feedback = button.dataset.feedback;
     const key = `scamshield-feedback-${feedback}`;
@@ -342,6 +345,43 @@ function renderResult(data) {
     resultPanel.querySelector('#feedbackStatus').textContent = 'Thank you — your feedback stays on this device for the prototype.';
   }));
 }
+
+function guidedVerification(data) {
+  const signals = new Set(data.signals || []);
+  const questions = [];
+  if (signals.has('credentials') || signals.has('authentication_code') || signals.has('login_approval')) questions.push('Were you expecting this login, support request or code prompt?');
+  if (signals.has('payment') || signals.has('family_impersonation')) questions.push('Did you independently confirm the payment request using a trusted contact?');
+  if (signals.has('impersonation') || signals.has('support_impersonation') || signals.has('link')) questions.push('Did you initiate contact, or verify the sender through an official channel you found yourself?');
+  if (!questions.length) return '';
+  return `<div class="guided-check result-section"><h3>Guided verification</h3><p class="guided-intro">These answers add user-provided context. They do not change the model evidence or prove what happened.</p>${questions.map((question, index) => `<div class="guided-question"><span>${escapeHtml(question)}</span><div><button type="button" data-context="yes" data-question="${index}">Yes</button><button type="button" data-context="no" data-question="${index}">No</button><button type="button" data-context="unsure" data-question="${index}">Not sure</button></div><small id="context-${index}" aria-live="polite"></small></div>`).join('')}</div>`;
+}
+
+resultPanel.addEventListener('click', event => {
+  const button = event.target.closest('[data-context]');
+  if (!button) return;
+  const target = resultPanel.querySelector(`#context-${button.dataset.question}`);
+  const messages = {yes:'Recorded as user-provided context: yes.', no:'Recorded as user-provided context: no.', unsure:'Recorded as user-provided context: not sure.'};
+  if (target) target.textContent = messages[button.dataset.context];
+  resultPanel.querySelectorAll(`[data-question="${button.dataset.question}"]`).forEach(x => x.classList.toggle('selected', x === button));
+});
+
+const conversationText = document.getElementById('conversationText');
+const conversationBtn = document.getElementById('conversationBtn');
+const conversationResult = document.getElementById('conversationResult');
+conversationBtn?.addEventListener('click', () => {
+  const lines = (conversationText?.value || '').split(/\n+/).map(x => x.trim()).filter(Boolean);
+  if (!lines.length) { conversationResult.textContent = 'Paste a redacted conversation first.'; return; }
+  const checks = [
+    ['impersonation', /\b(bank|nhs|university|helpdesk|support|official|security team)\b/i, 'Trusted-service or support identity appears'],
+    ['urgency', /\b(urgent|now|immediately|today|within \d+|final warning|close|suspend)\b/i, 'Pressure or deadline appears'],
+    ['secrecy', /\b(secret|do not tell|don.t tell|keep this between|confidential)\b/i, 'Secrecy request appears'],
+    ['payment or credentials', /\b(password|passcode|code|approve|login|pay|payment|transfer|£\s?\d)\b/i, 'Payment, credential or approval request appears'],
+    ['changed contact', /\b(new number|new account|different number|message me on|contact me here)\b/i, 'Changed contact or payment route appears']
+  ];
+  const observations = [];
+  lines.forEach((line, index) => checks.forEach(([name, pattern, explanation]) => { if (pattern.test(line)) observations.push({index: index + 1, name, explanation, quote: line}); }));
+  conversationResult.innerHTML = observations.length ? `<div class="conversation-meta">${lines.length} message${lines.length === 1 ? '' : 's'} reviewed locally · observations are not proof of malicious intent</div>${observations.map(item => `<article class="conversation-observation"><b>Message ${item.index} · ${escapeHtml(item.name)}</b><span>${escapeHtml(item.explanation)}</span><q>${escapeHtml(item.quote)}</q></article>`).join('')}` : '<div class="conversation-meta">No listed tactic was found in the supplied text. This does not prove the conversation is safe.</div>';
+});
 
 function inspectUrl() {
   const raw = urlInput?.value.trim();
