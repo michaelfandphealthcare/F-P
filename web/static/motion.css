@@ -32,6 +32,7 @@ body::before { animation: none !important; }
   inset: -5%;
   background: url('/static/assets/analyst-hero.png') center 43% / cover no-repeat;
   animation: backgroundHome 9s linear infinite alternate;
+  filter: saturate(.98) contrast(1.06) brightness(1.12);
   will-change: transform;
 }
 .app-motion-bg::after {
@@ -39,8 +40,8 @@ body::before { animation: none !important; }
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, rgba(5,20,32,.66), rgba(5,20,32,.82) 52%, rgba(5,20,32,.9)),
-    linear-gradient(90deg, rgba(5,20,32,.9), rgba(6,24,38,.58) 54%, rgba(6,24,38,.74));
+    linear-gradient(180deg, rgba(5,20,32,.2), rgba(5,20,32,.34) 52%, rgba(5,20,32,.52)),
+    linear-gradient(90deg, rgba(5,20,32,.76) 0%, rgba(6,24,38,.34) 54%, rgba(6,24,38,.18) 100%);
 }
 body[data-active-view="evidence"] .app-motion-bg::before { animation-name: backgroundEvidence; animation-duration: 10s; }
 body[data-active-view="dashboard"] .app-motion-bg::before { animation-name: backgroundDashboard; animation-duration: 11s; }
