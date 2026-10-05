@@ -289,6 +289,20 @@ exampleBtn.addEventListener('click', () => {
   message.focus();
 });
 
+document.querySelectorAll('.case-action').forEach(button => button.addEventListener('click', () => {
+  const sample = button.dataset.caseText || '';
+  if (message.value.trim()) {
+    errorBox.textContent = 'Your current message was kept. Clear it before loading this fictional case study.';
+    message.focus();
+    return;
+  }
+  message.value = sample;
+  message.dispatchEvent(new Event('input'));
+  document.querySelector('.workspace')?.scrollIntoView({behavior: 'smooth', block: 'start'});
+  message.focus({preventScroll: true});
+  errorBox.textContent = 'Fictional case study loaded. Select Analyse message to generate the live result.';
+}));
+
 visualExampleBtn?.addEventListener('click', () => {
   if (!demoExamples.length) return;
   const item = demoExamples[Math.floor(Math.random() * demoExamples.length)];
