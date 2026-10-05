@@ -13,6 +13,9 @@ const annotationChecks = document.querySelectorAll('.annotation-check');
 const ocrBtn = document.getElementById('ocrBtn');
 const useOcrBtn = document.getElementById('useOcrBtn');
 const visualResult = document.getElementById('visualResult');
+const urlInput = document.getElementById('urlInput');
+const inspectUrlBtn = document.getElementById('inspectUrlBtn');
+const urlResult = document.getElementById('urlResult');
 const visualExampleBtn = document.getElementById('visualExampleBtn');
 const removeImageBtn = document.getElementById('removeImageBtn');
 let selectedImageData = null;
@@ -331,6 +334,31 @@ function renderResult(data) {
   resultPanel.className = 'result-panel panel';
   const reasons = data.reasons.map(reason => `<div class="reason"><i>✓</i><span>${escapeHtml(reason)}</span></div>`).join('');
   const reasonHeading = data.label === 'Few warning signs detected' ? 'What the analysis found' : 'Signals requiring attention';
-  resultPanel.innerHTML = `<div class="result-head"><div><div class="result-label">${escapeHtml(data.label)}</div><span class="band">${escapeHtml(data.band)}</span></div></div><div class="result-section"><h3>${reasonHeading}</h3>${reasons}</div><div class="result-section"><h3>Safer next step</h3><div class="action">${escapeHtml(data.action)}</div></div><p class="result-disclaimer">${escapeHtml(data.score_meaning || 'This is decision support, not proof that a message is fraudulent.')}</p>`;
+  resultPanel.innerHTML = `<div class="result-head"><div><div class="result-label">${escapeHtml(data.label)}</div><span class="band">${escapeHtml(data.band)}</span></div></div><div class="result-section"><h3>${reasonHeading}</h3>${reasons}</div><div class="result-section"><h3>Safer next step</h3><div class="action">${escapeHtml(data.action)}</div></div><div class="feedback-box"><strong>Help improve the research</strong><span>Was this explanation useful?</span><div><button type="button" data-feedback="helpful">Yes, helpful</button><button type="button" data-feedback="unclear">Needs improvement</button></div><small id="feedbackStatus" aria-live="polite"></small></div><p class="result-disclaimer">${escapeHtml(data.score_meaning || 'This is decision support, not proof that a message is fraudulent.')}</p>`;
+  resultPanel.querySelectorAll('[data-feedback]').forEach(button => button.addEventListener('click', () => {
+    const feedback = button.dataset.feedback;
+    const key = `scamshield-feedback-${feedback}`;
+    localStorage.setItem(key, String(Number(localStorage.getItem(key) || 0) + 1));
+    resultPanel.querySelector('#feedbackStatus').textContent = 'Thank you — your feedback stays on this device for the prototype.';
+  }));
 }
+
+function inspectUrl() {
+  const raw = urlInput?.value.trim();
+  if (!raw) { urlResult.textContent = 'Paste a link first. ScamShield will inspect the text locally and will not open it.'; return; }
+  let parsed;
+  try { parsed = new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`); } catch { urlResult.innerHTML = '<strong class="url-danger">Unable to parse this as a normal web address.</strong>'; return; }
+  const host = parsed.hostname.toLowerCase();
+  const findings = [];
+  if (parsed.protocol !== 'https:') findings.push('not using HTTPS');
+  if (host.includes('xn--')) findings.push('uses encoded international characters');
+  if (/^(\d{1,3}\.){3}\d{1,3}$/.test(host)) findings.push('uses a raw IP address');
+  if (parsed.username || parsed.password) findings.push('contains embedded sign-in details');
+  if (/(login|verify|secure|claim|refund|payment|urgent|gift|wallet)/i.test(`${host}${parsed.pathname}`)) findings.push('contains high-pressure or account-related wording');
+  const status = findings.length ? 'Caution' : 'No obvious pattern found';
+  const tone = findings.length ? 'url-caution' : 'url-clear';
+  urlResult.innerHTML = `<strong class="${tone}">${status}</strong><span>Host: <b>${escapeHtml(host)}</b></span><span>${findings.length ? escapeHtml(findings.join('; ')) + '. Verify the organisation independently before acting.' : 'This local check found no obvious URL pattern. It does not prove the site is safe.'}</span><small>Local pattern check only · the address was not visited.</small>`;
+}
+inspectUrlBtn?.addEventListener('click', inspectUrl);
+urlInput?.addEventListener('keydown', event => { if (event.key === 'Enter') inspectUrl(); });
 function escapeHtml(value) { return String(value).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
