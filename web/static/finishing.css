@@ -64,6 +64,17 @@ button:focus-visible, summary:focus-visible, input:focus-visible, textarea:focus
   outline-offset:3px !important;
 }
 
+/* Keep the header focused on identity, navigation and the motion control. */
+@media (min-width:801px) {
+  .topbar {
+    display:grid;
+    grid-template-columns:minmax(260px,auto) minmax(320px,1fr) auto;
+    gap:28px;
+  }
+  .topbar .nav { justify-self:center; }
+  .topbar .motion-toggle { justify-self:end; }
+}
+
 @media (max-width:900px) {
   .challenge-panel { grid-template-columns:1fr; }
   .challenge-metrics { grid-template-columns:repeat(3,1fr); }
