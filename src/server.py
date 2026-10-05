@@ -16,12 +16,13 @@ except ImportError:  # Supports both `python src/server.py` and package imports.
 
 ROOT = Path(__file__).resolve().parents[1]
 WEB = ROOT / "web"
-BUILD_ID = os.environ.get("SCAMSHIELD_BUILD_ID") or os.environ.get("RENDER_GIT_COMMIT", "local-contextual-v3")
+BUILD_ID = os.environ.get("SCAMSHIELD_BUILD_ID") or os.environ.get("RENDER_GIT_COMMIT", "local-contextual-v4")
 DATA = ROOT / "data" / "sample_messages.csv"
 MODEL = ROOT / "artifacts" / "baseline_model.json"
 EVIDENCE = ROOT / "data" / "public_evidence.json"
 SCENARIOS = ROOT / "data" / "dashboard_scenarios.json"
 EVALUATION = ROOT / "data" / "evaluation_results.json"
+CHALLENGE_EVALUATION = ROOT / "data" / "challenge_evaluation.json"
 model = load_or_train(MODEL, DATA)
 
 
@@ -33,7 +34,9 @@ def dashboard_payload() -> dict:
         scenarios = json.load(f)
     with open(EVALUATION, encoding="utf-8") as f:
         evaluation = json.load(f)
-    return {"evidence": evidence, "scenarios": scenarios, "evaluation": evaluation}
+    with open(CHALLENGE_EVALUATION, encoding="utf-8") as f:
+        challenge_evaluation = json.load(f)
+    return {"evidence": evidence, "scenarios": scenarios, "evaluation": evaluation, "challenge_evaluation": challenge_evaluation}
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -53,7 +56,7 @@ class Handler(BaseHTTPRequestHandler):
         elif path == "/health":
             self._send(200, "application/json", json.dumps({"status": "ok", "prototype": "baseline", "build_id": BUILD_ID}).encode("utf-8"))
         elif path == "/api/meta":
-            self._send(200, "application/json", json.dumps({"build_id": BUILD_ID, "model_version": "contextual-baseline-v3", "ocr": "browser-local-tesseract"}).encode("utf-8"))
+            self._send(200, "application/json", json.dumps({"build_id": BUILD_ID, "model_version": "contextual-baseline-v4", "ocr": "browser-local-tesseract"}).encode("utf-8"))
         elif path == "/api/dashboard":
             self._send(200, "application/json", json.dumps(dashboard_payload()).encode("utf-8"))
         elif path.startswith("/static/"):

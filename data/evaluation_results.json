@@ -1,7 +1,7 @@
 {
   "status": "measured_held_out_result",
   "evaluation_date": "2026-10-05",
-  "model_version": "contextual-baseline-v3",
+  "model_version": "contextual-baseline-v4",
   "dataset_version": "heldout_messages-v1",
   "test_rows": 12,
   "class_distribution": {"legitimate": 7, "phishing": 5},
@@ -11,10 +11,10 @@
   "scenario_performance_status": "Pending: each named scenario type has only one held-out message, so no stable per-scenario estimate is reported.",
   "records": [
     {"scenario": "conversation", "label": "legitimate", "prediction": 0, "risk_score": 0.32},
-    {"scenario": "banking", "label": "legitimate", "prediction": 0, "risk_score": 0.32},
-    {"scenario": "healthcare", "label": "legitimate", "prediction": 0, "risk_score": 0.32},
+    {"scenario": "banking", "label": "legitimate", "prediction": 0, "risk_score": 0.18},
+    {"scenario": "healthcare", "label": "legitimate", "prediction": 0, "risk_score": 0.18},
     {"scenario": "university", "label": "legitimate", "prediction": 0, "risk_score": 0.32},
-    {"scenario": "ticketing", "label": "legitimate", "prediction": 0, "risk_score": 0.32},
+    {"scenario": "ticketing", "label": "legitimate", "prediction": 0, "risk_score": 0.18},
     {"scenario": "awareness", "label": "legitimate", "prediction": 0, "risk_score": 0.18},
     {"scenario": "quoted-scam", "label": "legitimate", "prediction": 0, "risk_score": 0.18},
     {"scenario": "credential-theft", "label": "phishing", "prediction": 1, "risk_score": 0.98},

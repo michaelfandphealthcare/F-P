@@ -31,6 +31,17 @@ PROTECTIVE_ADVICE = re.compile(
     r"[^.?!]{0,140}\b(?:password|passcode|code|otp|link|bank|account|payment|sender|scam|details)\b",
     re.I,
 )
+NEGATED_REQUEST = re.compile(
+    r"\b(?:no|not|never|did\s+not|didn't|was\s+not|wasn't|is\s+not|isn't)\b"
+    r"[^.?!]{0,80}\b(?:request(?:ed)?|approv(?:e|ed|al)|authori[sz](?:e|ed|ation)|transfer|payment|login|code|required)\b"
+    r"|\b(?:request(?:ed)?|approv(?:e|ed|al)|authori[sz](?:e|ed|ation)|transfer|payment|login|code)\b"
+    r"[^.?!]{0,55}\bnot\b",
+    re.I,
+)
+TRUSTED_PATH = re.compile(
+    r"\b(?:official app|usual (?:app|portal|website)|existing (?:letter|card|statement)|independently|number you already (?:have|trust))\b",
+    re.I,
+)
 AUTH_CODE_REQUEST = re.compile(
     r"\b(?:reply|send|share|tell|give|provide|forward|enter|type|confirm|verify)\b"
     r"[^.?!]{0,100}\b(?:six[- ]digit|\d[- ]digit|security|verification|authentication|one[- ]time|otp|passcode|access|login)"
@@ -45,6 +56,10 @@ LOGIN_APPROVAL = re.compile(
 SUPPORT_IMPERSONATION = re.compile(
     r"\b(?:it|technical|account|customer|service|help)\s*(?:support|helpdesk|desk|team)\b"
     r"|\b(?:helpdesk|support desk|support team|technical support)\b",
+    re.I,
+)
+STOP_TRANSFER_CONTEXT = re.compile(
+    r"\b(?:stop|block|cancel|prevent)\b[^.?!]{0,45}(?:£\s?\d[\d,.]*|\$\s?\d[\d,.]*|€\s?\d[\d,.]*)?[^.?!]{0,30}\b(?:transfer|payment|charge)\b",
     re.I,
 )
 
@@ -158,6 +173,31 @@ def _first_phrase(pattern: re.Pattern[str], text: str) -> str:
     return re.sub(r"\s+", " ", match.group(0)).strip() if match else ""
 
 
+def _actionable_text(text: str) -> tuple[str, bool, bool]:
+    """Exclude clearly protective or educational clauses from request matching.
+
+    This keeps a warning such as "never share your code" from becoming evidence,
+    while still analysing a separate clause that says "send your code here".
+    """
+    clauses = [part.strip() for part in re.split(r"(?<=[.!?;])\s+|\s+but\s+", text, flags=re.I) if part.strip()]
+    actionable: list[str] = []
+    found_protective = False
+    found_educational = False
+    for clause in clauses or [text]:
+        clause_protective = bool(
+            PROTECTIVE_ADVICE.search(clause)
+            or NEGATED_SECURITY.search(clause)
+            or NEGATED_REQUEST.search(clause)
+            or TRUSTED_PATH.search(clause)
+        )
+        clause_educational = bool(EDUCATIONAL_CONTEXT.search(clause))
+        found_protective = found_protective or clause_protective
+        found_educational = found_educational or clause_educational
+        if not clause_protective and not clause_educational:
+            actionable.append(clause)
+    return " ".join(actionable), found_protective, found_educational
+
+
 def contextual_analysis(text: str, probability: float, model: ScamShieldModel) -> dict:
     """Blend the transparent baseline with conservative, contextual rules.
 
@@ -169,19 +209,17 @@ def contextual_analysis(text: str, probability: float, model: ScamShieldModel) -
     evidence = []
     matched = []
     score = 0.08 + max(0.0, min(0.18, (probability - 0.5) * 0.25))
-    negated = bool(NEGATED_SECURITY.search(clean))
-    educational = bool(EDUCATIONAL_CONTEXT.search(clean))
-    protective = bool(PROTECTIVE_ADVICE.search(clean)) or negated
+    actionable, protective, educational = _actionable_text(clean)
     for key, pattern, message in SIGNAL_RULES:
-        phrase = _first_phrase(pattern, clean)
+        phrase = _first_phrase(pattern, actionable)
+        if key == "payment" and phrase and AUTH_CODE_REQUEST.search(actionable) and STOP_TRANSFER_CONTEXT.search(actionable):
+            phrase = ""
         if phrase:
             matched.append(key)
             evidence.append({"phrase": phrase, "explanation": message})
         score += {"urgency": .18, "credentials": .45, "payment": .28, "link": .12, "impersonation": .12, "family_impersonation": .30, "authentication_code": .38, "login_approval": .30, "support_impersonation": .10}[key]
-    if protective or educational:
+    if (protective or educational) and not actionable:
         score -= 0.45
-        matched = []
-        evidence = []
     if "credentials" in matched and ("urgency" in matched or "impersonation" in matched):
         score += 0.12
     if "authentication_code" in matched and "support_impersonation" in matched:
@@ -192,11 +230,11 @@ def contextual_analysis(text: str, probability: float, model: ScamShieldModel) -
         score += 0.08
     if any(pattern.search(clean) for pattern in LEGITIMATE_CONTEXT):
         score -= 0.16
-    if not matched and not protective and not educational:
+    if not matched:
         # A high lexical score without a contextual signal is not explainable
         # enough for a high-risk verdict. Keep it reviewable but conservative.
         score = min(score, 0.32)
-    if protective or educational:
+    if (protective or educational) and not matched:
         # A warning about scams is not itself a scam request. Keep the
         # classifier's explanation conservative even if lexical training
         # features contain words such as password, bank or code.
@@ -224,7 +262,7 @@ def contextual_analysis(text: str, probability: float, model: ScamShieldModel) -
         "evidence": evidence[:4],
         "signals": matched,
         "action": action,
-        "model_version": "contextual-baseline-v3",
+        "model_version": "contextual-baseline-v4",
     }
 
 

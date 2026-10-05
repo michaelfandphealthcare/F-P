@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="scamshield-build" content="contextual-v3">
+  <meta name="scamshield-build" content="contextual-v4">
   <title>ScamShield | A calmer second opinion</title>
   <link rel="icon" href="/static/logo.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/static/styles.css">
@@ -17,12 +17,15 @@
     <link rel="stylesheet" href="/static/refinement.css?v=1">
     <link rel="stylesheet" href="/static/polish.css?v=1">
     <link rel="stylesheet" href="/static/audit-overrides.css?v=20261005">
+    <link rel="stylesheet" href="/static/motion.css?v=1">
+    <link rel="stylesheet" href="/static/finishing.css?v=1">
 </head>
 <body>
   <header class="topbar">
     <div class="brand"><img class="full-brand-logo" src="/static/scamshield-logo.svg" alt="ScamShield — trust intelligence workspace"><span class="brand-project-credit">Osita Michael · L6 Production Project</span></div>
     <div class="workspace-crumb"><span class="crumb-dot"></span> Academic research <b>/</b> Scam prevention</div>
-    <nav class="nav"><button class="nav-btn active" data-view="scanner">Scanner</button><button class="nav-btn" data-view="evidence">Evidence lab</button><button class="nav-btn" data-view="dashboard">Research dashboard</button><span class="system-status"><i></i> System online</span><span class="prototype-pill">contextual-v3</span></nav>
+    <nav class="nav"><button class="nav-btn active" data-view="scanner">Scanner</button><button class="nav-btn" data-view="evidence">Evidence lab</button><button class="nav-btn" data-view="dashboard">Research dashboard</button><span class="system-status"><i></i> System online</span><span class="prototype-pill">contextual-v4</span></nav>
+    <button id="motionToggle" class="motion-toggle" type="button" aria-pressed="false">Pause motion</button>
   </header>
   <main class="shell">
     <section class="hero view scanner-view">
@@ -84,7 +87,7 @@
         <div class="panel-head"><div><h2>Check a message</h2><p>Use a fictional or public example for this academic prototype.</p></div><button id="exampleBtn" class="secondary">Try an example</button></div>
         <label for="message">Message text</label>
         <textarea id="message" maxlength="4000" placeholder="Paste the email or text message here..."></textarea>
-        <div class="input-meta"><span id="counter">0 / 4000</span><span>No messages are saved</span></div>
+        <div class="input-meta"><span id="counter">0 / 4000</span><span>Sent only for this analysis · not stored by the app</span></div>
         <button id="analyseBtn" class="primary">Analyse message <span aria-hidden="true">→</span></button>
         <div id="error" class="error" role="alert"></div>
         <div class="link-inspector"><div class="mini-heading"><span class="eyebrow">Safe link check</span><span>Local pattern review · never opens the link</span></div><div class="link-inspector-row"><input id="urlInput" type="url" inputmode="url" placeholder="Paste a link to inspect safely"><button id="inspectUrlBtn" class="secondary" type="button">Inspect link</button></div><div id="urlResult" class="url-result" aria-live="polite">Checks spelling, protocol and suspicious URL patterns without visiting the site.</div></div>
@@ -99,8 +102,9 @@
       <div><strong>Private by design</strong><span>No live inbox connection</span></div>
       <div><strong>Human-led</strong><span>AI is not proof or a final decision</span></div>
     </section>
-    <section class="privacy-panel view scanner-view" aria-label="Privacy and safety boundary"><div><span class="eyebrow">Privacy and safety</span><h2>Designed for safer review</h2></div><div class="privacy-grid"><span><b>Local first</b><small>Screenshot preview and OCR stay in your browser.</small></span><span><b>No inbox access</b><small>ScamShield does not read messages automatically.</small></span><span><b>Human decision</b><small>Results are signals, not proof or an automatic block.</small></span><span><b>Redact first</b><small>Remove names, account numbers and private details.</small></span></div></section>
+    <section class="privacy-panel view scanner-view" aria-label="Privacy and safety boundary"><div><span class="eyebrow">Privacy and safety</span><h2>Designed for safer review</h2></div><div class="privacy-grid"><span><b>Browser-local OCR</b><small>Image preview and OCR processing stay in the browser; analysed text is sent to this service for the current result.</small></span><span><b>No inbox access</b><small>ScamShield does not connect to or read inboxes automatically.</small></span><span><b>Human decision</b><small>Results are signals, not proof or an automatic block.</small></span><span><b>Redact first</b><small>Remove names, account numbers and private details before analysis.</small></span></div></section>
     <section class="evidence-lab view evidence-view hidden">
+      <div class="section-motion-bg" aria-hidden="true"></div>
       <div class="eyebrow">Multimodal evidence lab</div>
       <h1>Analyse the evidence, not the victim.</h1>
       <p class="dashboard-intro">Upload a screenshot of an email, text message or login page from a public case, university warning or your own redacted test sample. This tool reads visible scam-related text; it is not a face-recognition system and should not be used with portraits.</p>
@@ -118,12 +122,13 @@
       <div class="method-note"><strong>Method boundary:</strong> this prototype can analyse uploaded evidence and source-linked examples, but it does not identify private individuals, infer an offender's home address or claim that a named organisation was breached without an authoritative source.</div>
     </section>
     <section class="dashboard view dashboard-view hidden">
+      <div class="section-motion-bg" aria-hidden="true"></div>
       <div class="eyebrow">Research dashboard</div>
       <h1>What the evidence is telling us</h1>
       <p class="dashboard-intro">This page centres ScamShield’s measured held-out results: what it detected, what it got wrong and what the small dataset can—and cannot—support.</p>
       <div class="dashboard-intro-rule"><span class="method-pulse"></span><strong>Evidence rule</strong><span>Measured model results are separated from synthetic demonstrations and public background context.</span></div>
 
-      <div id="evaluationPanel" class="evaluation-panel evaluation-summary" aria-live="polite"><div class="evaluation-summary-copy"><span class="eyebrow">Measured held-out evaluation</span><h2>Held-out messages v1</h2><p>12 messages · evaluated 2026-10-05 · model contextual-baseline-v3</p></div><div class="evaluation-summary-stats"><span><b>12</b><small>messages</small></span><span><b>5</b><small>scams</small></span><span><b>7</b><small>legitimate</small></span><span><b>100%</b><small>recall</small></span></div><small class="evaluation-note">Small hand-curated held-out set; not a claim of real-world accuracy.</small></div>
+      <div id="evaluationPanel" class="evaluation-panel evaluation-summary" aria-live="polite"><div class="evaluation-summary-copy"><span class="eyebrow">Measured held-out evaluation</span><h2>Held-out messages v1</h2><p>12 messages · evaluated 2026-10-05 · model contextual-baseline-v4</p></div><div class="evaluation-summary-stats"><span><b>12</b><small>messages</small></span><span><b>5</b><small>scams</small></span><span><b>7</b><small>legitimate</small></span><span><b>100%</b><small>recall</small></span></div><small class="evaluation-note">Small hand-curated held-out set; not a claim of real-world accuracy.</small></div>
 
       <div class="results-chart-grid">
         <article class="chart-card results-chart-card confusion-card"><div class="chart-head"><div><span class="chart-kicker">Measured result</span><h2>Confusion matrix</h2><p>Counts of correct decisions and errors in the held-out set.</p></div><span class="chart-tag measured">Measured</span></div><div id="confusionChart" class="confusion-matrix" aria-label="Confusion matrix chart"></div><div id="confusionTable" class="accessible-table"></div><p class="chart-explanation"><strong>What this tells us:</strong> this run detected all five scams and correctly cleared all seven legitimate examples. The small hand-curated split cannot establish real-world reliability.</p></article>
@@ -134,14 +139,17 @@
 
       <section class="interpretation-panel"><div><span class="chart-kicker">Interpretation</span><h2>What the result means</h2></div><div class="interpretation-grid"><p><strong>Strength:</strong> all five phishing messages in this held-out set were detected.</p><p class="caution-copy"><strong>Caution:</strong> a perfect score on only 12 hand-curated messages may reflect limited coverage and rule overlap.</p><p><strong>Boundary:</strong> this is decision support, not proof of fraud or evidence of real-world reliability.</p></div></section>
 
+      <section id="challengePanel" class="challenge-panel" aria-live="polite"><div class="challenge-copy"><span class="chart-kicker">Separate robustness check</span><h2>Broader challenge set</h2><p>Loading the versioned challenge evaluation…</p></div></section>
+
       <section class="demo-section"><div class="section-kicker"><div><span class="chart-kicker">Secondary view</span><h2>Demonstration dataset</h2><p>Useful synthetic counts for showing the prototype’s research scenarios. They are not the held-out evaluation above.</p></div><span class="chart-tag synthetic">Synthetic</span></div><div class="demo-meta"><span><b>120</b> controlled scenario mentions</span><span><b>5</b> scenario categories</span><span><b>Multiple signals</b> can appear in one message</span></div><div class="demo-chart-grid"><article class="chart-card"><div class="chart-head"><div><h3>Scenario distribution</h3><p>Counts in the demonstration set</p></div><span class="chart-tag synthetic">Synthetic</span></div><div id="sectorChart" class="bars"></div><div class="chart-note">Not a national crime statistic and not the held-out test set.</div></article><article class="chart-card"><div class="chart-head"><div><h3>Warning-sign mentions</h3><p>A message can contain more than one signal</p></div><span class="chart-tag synthetic">Synthetic</span></div><div id="signalChart" class="bars"></div><div class="chart-note">Demonstration counts only; not measured detection performance.</div></article></div></section>
 
       <details class="methodology-disclosure"><summary>Methodology, sources and limitations</summary><div class="disclosure-grid"><div><h3>Evaluation</h3><p>Held-out messages are stored in <code>data/heldout_messages.csv</code>; the result is generated by the reproducible evaluator and served from <code>data/evaluation_results.json</code>. The current version has 12 messages: 7 legitimate and 5 phishing.</p><p>The measured comparator is a TF-IDF-only score at a fixed 0.5 threshold on the same held-out split. It is a simple research baseline, not a production benchmark.</p></div><div><h3>Public sources</h3><ul><li><a href="https://www.ons.gov.uk/peoplepopulationandcommunity/crimeandjustice/articles/natureoffraudandcomputermisuseinenglandandwales/yearendingmarch2025/previous/" target="_blank" rel="noreferrer">ONS fraud and computer misuse estimates</a></li><li><a href="https://www.gov.uk/government/publications/fraud-strategy-2026-to-2029" target="_blank" rel="noreferrer">UK Fraud Strategy 2026 to 2029</a></li><li><a href="https://www.ncsc.gov.uk/collection/phishing-scams/spot-scams" target="_blank" rel="noreferrer">NCSC phishing guidance</a></li></ul><p>Public figures are background context only; they are not model outputs.</p></div></div></details>
     </section>
   </main>
   <div id="imageLightbox" class="image-lightbox hidden" role="dialog" aria-modal="true" aria-label="Full-size evidence image"><button id="closeLightbox" class="lightbox-close" type="button" aria-label="Close full-size image">×</button><img id="lightboxImage" alt="Full-size evidence preview"><p>Fictional or redacted evidence preview · click outside to close</p></div>
-  <footer><span>ScamShield is a controlled academic prototype.</span><span>Always verify important requests independently. · Build <code>contextual-v3</code></span></footer>
+  <footer><span>ScamShield is a controlled academic prototype.</span><span>Always verify important requests independently. · Build <code>contextual-v4</code></span></footer>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-  <script src="/static/app.js?v=4e7d43c"></script>
+  <script src="/static/conversation.js?v=1"></script>
+  <script src="/static/app.js?v=motion-audit-1"></script>
 </body>
 </html>

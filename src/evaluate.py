@@ -10,6 +10,8 @@ from pathlib import Path
 
 from .core import explain, train_from_csv
 
+MODEL_VERSION = "contextual-baseline-v4"
+
 
 def evaluate(train_path: Path, test_path: Path) -> dict:
     model = train_from_csv(train_path)
@@ -42,7 +44,7 @@ def evaluate(train_path: Path, test_path: Path) -> dict:
     return {
         "dataset": {"train": str(train_path), "test": str(test_path), "test_rows": len(rows), "class_distribution": dict(Counter(row["label"] for row in rows))},
         "evaluation_date": date.today().isoformat(),
-        "model_version": "contextual-baseline-v3",
+        "model_version": MODEL_VERSION,
         "metrics": {"precision": round(precision, 3), "recall": round(recall, 3), "f1": round(f1, 3), "false_positives": fp, "missed_scams": fn, "confusion_matrix": {"true_negative": tn, "false_positive": fp, "false_negative": fn, "true_positive": tp}},
         "records": records,
         "baseline_metrics": {"precision": round(bprecision, 3), "recall": round(brecall, 3), "f1": round(bf1, 3), "confusion_matrix": {"true_negative": btn, "false_positive": bfp, "false_negative": bfn, "true_positive": btp}, "method": "TF-IDF-only score at threshold 0.5"},

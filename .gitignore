@@ -1,0 +1,5 @@
+__pycache__/
+*.py[cod]
+artifacts/test_model.json
+work/
+web/static/test-fresh-fictional-sms.png

@@ -70,6 +70,29 @@ class ScamShieldTests(unittest.TestCase):
         result = explain(text, self.model.predict_probability(text), self.model)
         self.assertTrue(any('£850' in reason for reason in result['reasons']))
 
+    def test_protective_clause_does_not_hide_separate_code_request(self):
+        text = 'Do not call your bank. Send your verification code here.'
+        result = explain(text, self.model.predict_probability(text), self.model)
+        self.assertIn('authentication_code', result['signals'])
+        self.assertNotEqual(result['label'], 'Few warning signs detected')
+
+    def test_code_request_to_stop_transfer_is_not_described_as_payment_request(self):
+        text = 'Send your verification code here within 5 minutes to stop a £850 transfer.'
+        result = explain(text, self.model.predict_probability(text), self.model)
+        self.assertIn('authentication_code', result['signals'])
+        self.assertNotIn('payment', result['signals'])
+
+    def test_benign_payment_discussion_is_not_a_payment_request(self):
+        text = 'We discussed the rent payment yesterday and agreed no transfer is required.'
+        result = explain(text, self.model.predict_probability(text), self.model)
+        self.assertNotIn('payment', result['signals'])
+
+    def test_quoted_scam_advice_remains_lower_caution(self):
+        text = 'Security awareness: scammers may say send your verification code. Never reply.'
+        result = explain(text, self.model.predict_probability(text), self.model)
+        self.assertEqual(result['label'], 'Few warning signs detected')
+        self.assertEqual(result['signals'], [])
+
     def test_normal_notice_is_not_high_caution(self):
         text = 'The library will be closed on Monday for scheduled maintenance.'
         result = explain(text, self.model.predict_probability(text), self.model)

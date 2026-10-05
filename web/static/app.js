@@ -71,6 +71,7 @@ async function loadDashboard() {
     const baselineNote = document.querySelector('.methodology-disclosure .disclosure-grid > div:first-child p:nth-of-type(2)');
     if (baselineNote) baselineNote.textContent = 'The TF-IDF-only baseline is measured on the same 12-message held-out split. It is a simple comparison point, not a production benchmark.';
     renderMeasuredCharts(data.evaluation);
+    renderChallengeEvaluation(data.challenge_evaluation);
     renderBars('sectorChart', data.scenarios.sector_mix);
     renderBars('signalChart', data.scenarios.warning_signals);
     renderBars('officialTrendChart', data.scenarios.official_trend, true);
@@ -80,6 +81,15 @@ async function loadDashboard() {
     document.getElementById('sectorChart').innerHTML = `<p class="chart-error">${escapeHtml(err.message)}</p>`;
     document.getElementById('signalChart').innerHTML = `<p class="chart-error">Try refreshing the prototype.</p>`;
   }
+}
+
+function renderChallengeEvaluation(evaluation) {
+  const root = document.getElementById('challengePanel');
+  if (!root || !evaluation) return;
+  const metrics = evaluation.metrics || {};
+  const matrix = metrics.confusion_matrix || {};
+  const failures = evaluation.failure_examples || [];
+  root.innerHTML = `<div class="challenge-copy"><span class="chart-kicker">Separate robustness check</span><h2>Broader challenge set</h2><p>${escapeHtml(evaluation.test_rows)} author-created messages · 12 scam and 12 legitimate · model ${escapeHtml(evaluation.model_version)} · ${escapeHtml(evaluation.evaluation_date)}</p><small>This set was not used for training. It is broader than the held-out set, but it is still hand-authored and not representative of real-world prevalence.</small></div><div class="challenge-metrics"><span><b>${Math.round((metrics.precision || 0) * 100)}%</b><small>precision</small></span><span><b>${Math.round((metrics.recall || 0) * 100)}%</b><small>recall</small></span><span><b>${Math.round((metrics.f1 || 0) * 100)}%</b><small>F1</small></span><span><b>${matrix.false_positive || 0}</b><small>false alarms</small></span><span><b>${matrix.false_negative || 0}</b><small>missed scams</small></span></div><div class="challenge-failures"><strong>Observed failure cases</strong>${failures.map(item => `<p><b>${escapeHtml(item.scenario)}</b> — ${escapeHtml(item.summary)}</p>`).join('')}</div>`;
 }
 
 if (imageInput) imageInput.addEventListener('change', () => {
@@ -166,6 +176,8 @@ if (useOcrBtn) useOcrBtn.addEventListener('click', async () => {
   const requestId = ++visualAnalysisRequestId;
   useOcrBtn.disabled = true;
   useOcrBtn.textContent = 'Analysing image evidence...';
+  visualResult.classList.add('hidden');
+  document.getElementById('ocrStatus').textContent = 'Analysing the current extracted text. Any previous image result has been cleared.';
   try {
     const response = await fetch('/api/analyse', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({text: extractedText}) });
     const data = await response.json();
@@ -174,7 +186,10 @@ if (useOcrBtn) useOcrBtn.addEventListener('click', async () => {
     const reasons = data.reasons.map(reason => `<li><span>✓</span>${escapeHtml(reason)}</li>`).join('');
     visualResult.innerHTML = `<div class="visual-result-head"><div><span class="eyebrow">Image evidence result</span><h3>${escapeHtml(data.label)}</h3><span class="band">${escapeHtml(data.band)}</span></div></div><h4>Why it was flagged</h4><ul>${reasons}</ul><h4>Safer next step</h4><p class="visual-action">${escapeHtml(data.action)}</p><small class="visual-boundary">${escapeHtml(data.score_meaning || 'This result is based on visible text from the selected image and is not proof of fraud.')}</small>`;
     visualResult.classList.remove('hidden');
-  } catch (err) { document.getElementById('ocrStatus').textContent = err.message; }
+  } catch (err) {
+    visualResult.classList.add('hidden');
+    document.getElementById('ocrStatus').textContent = `${err.message} No result is being shown for this image.`;
+  }
   finally { useOcrBtn.disabled = false; useOcrBtn.innerHTML = 'Analyse image evidence <span aria-hidden="true">→</span>'; }
 });
 
@@ -292,26 +307,34 @@ function showScannerAndFocus({ announce = '' } = {}) {
   if (announce) errorBox.textContent = announce;
 }
 
-exampleBtn.addEventListener('click', () => {
-  const item = demoExamples.length ? demoExamples[Math.floor(Math.random() * demoExamples.length)] : { text: 'Urgent: your account will be suspended today. Confirm your password and payment details using the link below to keep access.' };
-  message.value = item.text;
-  message.dispatchEvent(new Event('input'));
-  message.focus();
-});
-
-document.querySelectorAll('.case-action').forEach(button => button.addEventListener('click', () => {
-  const sample = button.dataset.caseText || '';
-  if (message.value.trim()) {
-    errorBox.textContent = 'Your current message was kept. Clear it before loading this fictional case study.';
-    message.focus();
-    return;
+function loadScannerSample(sample, sourceLabel = 'Fictional example') {
+  if (!sample) return false;
+  const current = message.value.trim();
+  if (current && current !== sample.trim()) {
+    const replace = window.confirm('Replace the message currently in the Scanner with this fictional example?');
+    if (!replace) {
+      showScannerAndFocus({ announce: 'Your current Scanner text was kept.' });
+      return false;
+    }
   }
   message.value = sample;
   message.dispatchEvent(new Event('input'));
-  document.querySelector('.workspace')?.scrollIntoView({behavior: 'smooth', block: 'start'});
-  message.focus({preventScroll: true});
-  errorBox.textContent = 'Fictional case study loaded. Select Analyse message to generate the live result.';
-}));
+  showScannerAndFocus({ announce: `${sourceLabel} loaded. Select Analyse message to generate a new result.` });
+  return true;
+}
+
+exampleBtn.addEventListener('click', () => {
+  const item = demoExamples.length ? demoExamples[Math.floor(Math.random() * demoExamples.length)] : { text: 'Urgent: your account will be suspended today. Confirm your password and payment details using the link below to keep access.' };
+  loadScannerSample(item.text, 'Fictional example');
+});
+
+document.querySelectorAll('.case-action').forEach(button => {
+  button.textContent = 'Load in Scanner';
+  button.addEventListener('click', () => {
+  const sample = button.dataset.caseText || '';
+  loadScannerSample(sample, 'Fictional scenario');
+  });
+});
 
 visualExampleBtn?.addEventListener('click', () => {
   if (!demoExamples.length) return;
@@ -349,16 +372,33 @@ analyseBtn.addEventListener('click', async () => {
   errorBox.textContent = '';
   const requestId = ++analysisRequestId;
   const submittedText = message.value.trim();
+  if (!submittedText) {
+    errorBox.textContent = 'Paste or type a message before analysing it.';
+    message.focus();
+    return;
+  }
   analyseBtn.disabled = true;
   analyseBtn.innerHTML = 'Analysing...';
+  resultPanel.className = 'result-panel panel empty';
+  resultPanel.setAttribute('aria-busy', 'true');
+  resultPanel.innerHTML = '<div class="result-placeholder"><div class="shield">…</div><h2>Analysing this message</h2><p>The previous result has been cleared.</p></div>';
   try {
     const response = await fetch('/api/analyse', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({text: submittedText}) });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || 'Unable to analyse the message.');
     if (requestId !== analysisRequestId || submittedText !== message.value.trim()) return;
     renderResult(data);
-  } catch (err) { if (requestId === analysisRequestId) errorBox.textContent = err.message; }
-  finally { analyseBtn.disabled = false; analyseBtn.innerHTML = 'Analyse message <span aria-hidden="true">→</span>'; }
+  } catch (err) {
+    if (requestId === analysisRequestId) {
+      errorBox.textContent = err.message;
+      resultPanel.className = 'result-panel panel empty';
+      resultPanel.innerHTML = '<div class="result-placeholder"><div class="shield">!</div><h2>Analysis did not complete</h2><p>No result is being shown for this message. Review the error and try again.</p></div>';
+    }
+  } finally {
+    resultPanel.removeAttribute('aria-busy');
+    analyseBtn.disabled = false;
+    analyseBtn.innerHTML = 'Analyse message <span aria-hidden="true">→</span>';
+  }
 });
 
 function renderResult(data) {
@@ -465,8 +505,8 @@ conversationBtn?.addEventListener('click', () => {
   }, 520);
   const lines = (conversationText?.value || '').split(/\n+/).map(x => x.trim()).filter(Boolean);
   if (!lines.length) { conversationResult.textContent = 'Paste a redacted conversation first.'; return; }
-  const observations = analyseConversationLines(lines);
-  conversationResult.innerHTML = observations.length ? `<div class="conversation-meta">${lines.length} message${lines.length === 1 ? '' : 's'} reviewed locally · each observation is attached to its exact line · observations are not proof of malicious intent</div>${observations.map(item => `<article class="conversation-observation"><b>Message ${item.index} · ${escapeHtml(item.name)}</b><span>${escapeHtml(item.explanation)}</span><q>${escapeHtml(item.quote)}</q></article>`).join('')}` : '<div class="conversation-meta">No request, denial, warning or quoted tactic was found in the supplied text. This does not prove the conversation is safe.</div>';
+  const observations = window.ScamShieldConversation?.analyse(lines) || [];
+  conversationResult.innerHTML = observations.length ? `<div class="conversation-meta">${lines.length} message${lines.length === 1 ? '' : 's'} reviewed locally · each observation is attached to its exact supporting excerpt · speaker labels are user supplied, not identity checks</div>${observations.map(item => `<article class="conversation-observation"><b>Message ${item.index} · ${escapeHtml(item.name)}</b><span>${escapeHtml(item.explanation)}</span><q>${escapeHtml(item.speaker)}: ${escapeHtml(item.excerpt)}</q></article>`).join('')}` : '<div class="conversation-meta">No supported request, denial, verification warning or quoted tactic was found in the supplied text. This does not prove the conversation is safe.</div>';
   conversationResult.classList.remove('is-ready');
   void conversationResult.offsetWidth;
   conversationResult.classList.add('is-ready');
@@ -518,3 +558,27 @@ journeyPrev?.addEventListener('click', () => updateJourney(journeyIndex - 1));
 journeyNext?.addEventListener('click', () => updateJourney(journeyIndex + 1));
 journeyReset?.addEventListener('click', () => updateJourney(0));
 updateJourney(0);
+
+const motionToggle = document.getElementById('motionToggle');
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+let motionPausedByUser = false;
+function updateMotionControl() {
+  const systemPaused = reducedMotion.matches;
+  document.body.classList.toggle('motion-paused', motionPausedByUser || systemPaused);
+  motionToggle.disabled = systemPaused;
+  motionToggle.setAttribute('aria-pressed', String(motionPausedByUser || systemPaused));
+  motionToggle.textContent = systemPaused ? 'Motion off' : motionPausedByUser ? 'Resume motion' : 'Pause motion';
+  motionToggle.setAttribute('aria-label', systemPaused ? 'Background motion off due to system settings' : motionPausedByUser ? 'Resume animated backgrounds' : 'Pause animated backgrounds');
+}
+motionToggle?.addEventListener('click', () => { motionPausedByUser = !motionPausedByUser; updateMotionControl(); });
+reducedMotion.addEventListener?.('change', updateMotionControl);
+document.addEventListener('visibilitychange', () => document.body.classList.toggle('motion-hidden', document.hidden));
+document.body.classList.toggle('motion-hidden', document.hidden);
+updateMotionControl();
+const animatedSections = document.querySelectorAll('.hero, .evidence-lab, .dashboard');
+if ('IntersectionObserver' in window) {
+  const motionObserver = new IntersectionObserver(entries => {
+    entries.forEach(entry => entry.target.classList.toggle('motion-out-of-view', !entry.isIntersecting));
+  }, { threshold: 0.01 });
+  animatedSections.forEach(section => { section.classList.add('motion-out-of-view'); motionObserver.observe(section); });
+}

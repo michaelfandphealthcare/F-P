@@ -1,0 +1,119 @@
+/* Only the image pixels move; the dark masks and every content layer stay still. */
+.hero {
+  isolation: isolate;
+  background: #071b2b !important;
+  animation: none !important;
+}
+.hero-visual-image {
+  inset: -4% !important;
+  width: 108% !important;
+  height: 108% !important;
+  opacity: 1 !important;
+  mix-blend-mode: normal !important;
+  filter: none !important;
+  animation: backgroundHome 9s linear infinite alternate !important;
+  will-change: transform;
+}
+.hero::after {
+  inset: 0 !important;
+  opacity: 1 !important;
+  transform: none !important;
+  mix-blend-mode: normal !important;
+  background: linear-gradient(90deg, rgba(5,20,32,.96) 0%, rgba(7,27,43,.82) 44%, rgba(7,27,43,.38) 100%) !important;
+  animation: none !important;
+}
+@keyframes backgroundHome {
+  from { transform: translate3d(-2%, 1.2%, 0) scale(1.01); }
+  to { transform: translate3d(2%, -1.2%, 0) scale(1.06); }
+}
+
+.evidence-lab, .dashboard { position:relative; isolation:isolate; overflow:clip; }
+.evidence-lab::before, .dashboard::before { display: none !important; }
+.evidence-lab > :not(.section-motion-bg),
+.dashboard > :not(.section-motion-bg) { position: relative; z-index: 1; }
+.section-motion-bg {
+  position: absolute;
+  inset: -38px -26px auto;
+  height: 340px;
+  overflow: hidden;
+  border-radius: 28px;
+  background: #0b2232;
+  z-index: 0;
+  pointer-events: none;
+}
+.section-motion-bg::before {
+  content: "";
+  position: absolute;
+  inset: -4%;
+  background: url('/static/assets/analyst-hero.png') center 43% / cover no-repeat;
+  will-change: transform;
+}
+.section-motion-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(5,20,32,.96), rgba(6,24,38,.76) 54%, rgba(6,24,38,.48));
+}
+.evidence-lab .section-motion-bg::before {
+  animation: backgroundEvidence 10s linear infinite alternate;
+}
+.dashboard .section-motion-bg::before {
+  background-position: center 38%;
+  animation: backgroundDashboard 11s linear infinite alternate;
+}
+@keyframes backgroundEvidence {
+  from { transform: translate3d(2%, -1.2%, 0) scale(1.01); }
+  to { transform: translate3d(-2%, 1.2%, 0) scale(1.06); }
+}
+@keyframes backgroundDashboard {
+  from { transform: translate3d(-1.8%, 1.2%, 0) scale(1.06); }
+  to { transform: translate3d(2%, -1.2%, 0) scale(1.01); }
+}
+
+.motion-toggle {
+  flex: 0 0 auto;
+  min-height: 42px;
+  padding: 9px 13px;
+  border: 1px solid #4b7185;
+  border-radius: 10px;
+  background: #193449;
+  color: #e3edf3;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.motion-toggle:hover { border-color: #63d6c6; color: #8be7da; }
+.motion-toggle:focus-visible { outline: 3px solid #63d6c6; outline-offset: 3px; }
+.motion-toggle:disabled { opacity: .7; cursor: default; }
+/* Keep content stationary: the three dedicated image layers above are the only motion. */
+.sector-visual,
+.journey-step .journey-art,
+.fraud-scene,
+.fraud-scene::after,
+.fraud-path-stage::after,
+.path-beam,
+.method-pulse,
+.pulse-ring,
+.generic-university-mark { animation:none !important; }
+.motion-paused .hero-visual-image,
+.motion-paused .section-motion-bg::before,
+.motion-hidden .hero-visual-image,
+.motion-hidden .section-motion-bg::before,
+.motion-out-of-view .hero-visual-image,
+.motion-out-of-view .section-motion-bg::before { animation-play-state: paused !important; }
+
+@media (max-width: 800px) {
+  .section-motion-bg { inset: -24px -16px auto; height: 310px; border-radius: 20px; }
+  .hero-visual-image { animation: backgroundHomeSmall 10s linear infinite alternate !important; }
+  .evidence-lab .section-motion-bg::before { animation: backgroundEvidenceSmall 10.5s linear infinite alternate; }
+  .dashboard .section-motion-bg::before { animation: backgroundDashboardSmall 11s linear infinite alternate; }
+  @keyframes backgroundHomeSmall { from { transform: translate3d(-.9%, .55%, 0) scale(1.01); } to { transform: translate3d(.9%, -.55%, 0) scale(1.045); } }
+  @keyframes backgroundEvidenceSmall { from { transform: translate3d(.9%, -.55%, 0) scale(1.01); } to { transform: translate3d(-.9%, .55%, 0) scale(1.045); } }
+  @keyframes backgroundDashboardSmall { from { transform: translate3d(-.8%, .55%, 0) scale(1.045); } to { transform: translate3d(.9%, -.55%, 0) scale(1.01); } }
+}
+@media (max-width: 800px) { .motion-toggle { order:3; margin-left:auto; } }
+@media (max-width: 560px) { .motion-toggle { width:100%; margin:0; } }
+@media (prefers-reduced-motion: reduce) {
+  .hero-visual-image, .section-motion-bg::before { animation: none !important; transform: none !important; will-change: auto; }
+}
