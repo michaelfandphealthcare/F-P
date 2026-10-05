@@ -49,6 +49,7 @@ document.querySelectorAll('.nav-btn').forEach(btn => btn.addEventListener('click
   document.querySelectorAll('.nav-btn').forEach(x => x.classList.remove('active'));
   btn.classList.add('active');
   const view = btn.dataset.view;
+  document.body.dataset.activeView = view;
   document.querySelectorAll('.scanner-view').forEach(x => x.classList.toggle('hidden', view !== 'scanner'));
   document.querySelector('.dashboard-view').classList.toggle('hidden', view !== 'dashboard');
   document.querySelector('.evidence-view').classList.toggle('hidden', view !== 'evidence');
@@ -298,6 +299,7 @@ message.addEventListener('input', () => {
   }
 });
 function showScannerAndFocus({ announce = '' } = {}) {
+  document.body.dataset.activeView = 'scanner';
   document.querySelectorAll('.nav-btn').forEach(x => x.classList.toggle('active', x.dataset.view === 'scanner'));
   document.querySelectorAll('.scanner-view').forEach(x => x.classList.remove('hidden'));
   document.querySelector('.dashboard-view')?.classList.add('hidden');

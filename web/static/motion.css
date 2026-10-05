@@ -1,18 +1,12 @@
 /* Only the image pixels move; the dark masks and every content layer stay still. */
 .hero {
   isolation: isolate;
-  background: #071b2b !important;
+  background: rgba(5, 20, 32, .72) !important;
+  background-image: none !important;
   animation: none !important;
 }
 .hero-visual-image {
-  inset: -4% !important;
-  width: 108% !important;
-  height: 108% !important;
-  opacity: 1 !important;
-  mix-blend-mode: normal !important;
-  filter: none !important;
-  animation: backgroundHome 9s linear infinite alternate !important;
-  will-change: transform;
+  display: none !important;
 }
 .hero::after {
   inset: 0 !important;
@@ -22,45 +16,41 @@
   background: linear-gradient(90deg, rgba(5,20,32,.96) 0%, rgba(7,27,43,.82) 44%, rgba(7,27,43,.38) 100%) !important;
   animation: none !important;
 }
+.topbar, .shell, footer { position: relative; z-index: 1; }
+body::before { animation: none !important; }
+.app-motion-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: #071b2b;
+}
+.app-motion-bg::before {
+  content: "";
+  position: absolute;
+  inset: -5%;
+  background: url('/static/assets/analyst-hero.png') center 43% / cover no-repeat;
+  animation: backgroundHome 9s linear infinite alternate;
+  will-change: transform;
+}
+.app-motion-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(5,20,32,.66), rgba(5,20,32,.82) 52%, rgba(5,20,32,.9)),
+    linear-gradient(90deg, rgba(5,20,32,.9), rgba(6,24,38,.58) 54%, rgba(6,24,38,.74));
+}
+body[data-active-view="evidence"] .app-motion-bg::before { animation-name: backgroundEvidence; animation-duration: 10s; }
+body[data-active-view="dashboard"] .app-motion-bg::before { animation-name: backgroundDashboard; animation-duration: 11s; }
 @keyframes backgroundHome {
   from { transform: translate3d(-2%, 1.2%, 0) scale(1.01); }
   to { transform: translate3d(2%, -1.2%, 0) scale(1.06); }
 }
 
-.evidence-lab, .dashboard { position:relative; isolation:isolate; overflow:clip; }
+.evidence-lab, .dashboard { position:relative; isolation:isolate; overflow:visible; }
 .evidence-lab::before, .dashboard::before { display: none !important; }
-.evidence-lab > :not(.section-motion-bg),
-.dashboard > :not(.section-motion-bg) { position: relative; z-index: 1; }
-.section-motion-bg {
-  position: absolute;
-  inset: -38px -26px auto;
-  height: 340px;
-  overflow: hidden;
-  border-radius: 28px;
-  background: #0b2232;
-  z-index: 0;
-  pointer-events: none;
-}
-.section-motion-bg::before {
-  content: "";
-  position: absolute;
-  inset: -4%;
-  background: url('/static/assets/analyst-hero.png') center 43% / cover no-repeat;
-  will-change: transform;
-}
-.section-motion-bg::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, rgba(5,20,32,.96), rgba(6,24,38,.76) 54%, rgba(6,24,38,.48));
-}
-.evidence-lab .section-motion-bg::before {
-  animation: backgroundEvidence 10s linear infinite alternate;
-}
-.dashboard .section-motion-bg::before {
-  background-position: center 38%;
-  animation: backgroundDashboard 11s linear infinite alternate;
-}
 @keyframes backgroundEvidence {
   from { transform: translate3d(2%, -1.2%, 0) scale(1.01); }
   to { transform: translate3d(-2%, 1.2%, 0) scale(1.06); }
@@ -97,17 +87,16 @@
 .pulse-ring,
 .generic-university-mark { animation:none !important; }
 .motion-paused .hero-visual-image,
-.motion-paused .section-motion-bg::before,
+.motion-paused .app-motion-bg::before,
 .motion-hidden .hero-visual-image,
-.motion-hidden .section-motion-bg::before,
+.motion-hidden .app-motion-bg::before,
 .motion-out-of-view .hero-visual-image,
-.motion-out-of-view .section-motion-bg::before { animation-play-state: paused !important; }
+.motion-out-of-view .hero-visual-image { animation-play-state: paused !important; }
 
 @media (max-width: 800px) {
-  .section-motion-bg { inset: -24px -16px auto; height: 310px; border-radius: 20px; }
-  .hero-visual-image { animation: backgroundHomeSmall 10s linear infinite alternate !important; }
-  .evidence-lab .section-motion-bg::before { animation: backgroundEvidenceSmall 10.5s linear infinite alternate; }
-  .dashboard .section-motion-bg::before { animation: backgroundDashboardSmall 11s linear infinite alternate; }
+  .app-motion-bg::before { animation: backgroundHomeSmall 10s linear infinite alternate; }
+  body[data-active-view="evidence"] .app-motion-bg::before { animation-name: backgroundEvidenceSmall; animation-duration: 10.5s; }
+  body[data-active-view="dashboard"] .app-motion-bg::before { animation-name: backgroundDashboardSmall; animation-duration: 11s; }
   @keyframes backgroundHomeSmall { from { transform: translate3d(-.9%, .55%, 0) scale(1.01); } to { transform: translate3d(.9%, -.55%, 0) scale(1.045); } }
   @keyframes backgroundEvidenceSmall { from { transform: translate3d(.9%, -.55%, 0) scale(1.01); } to { transform: translate3d(-.9%, .55%, 0) scale(1.045); } }
   @keyframes backgroundDashboardSmall { from { transform: translate3d(-.8%, .55%, 0) scale(1.045); } to { transform: translate3d(.9%, -.55%, 0) scale(1.01); } }
@@ -115,5 +104,5 @@
 @media (max-width: 800px) { .motion-toggle { order:3; margin-left:auto; } }
 @media (max-width: 560px) { .motion-toggle { width:100%; margin:0; } }
 @media (prefers-reduced-motion: reduce) {
-  .hero-visual-image, .section-motion-bg::before { animation: none !important; transform: none !important; will-change: auto; }
+  .app-motion-bg::before { animation: none !important; transform: none !important; will-change: auto; }
 }

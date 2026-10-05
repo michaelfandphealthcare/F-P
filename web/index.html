@@ -17,16 +17,17 @@
     <link rel="stylesheet" href="/static/refinement.css?v=1">
     <link rel="stylesheet" href="/static/polish.css?v=1">
     <link rel="stylesheet" href="/static/audit-overrides.css?v=20261005">
-    <link rel="stylesheet" href="/static/motion.css?v=1">
+    <link rel="stylesheet" href="/static/motion.css?v=full-page-1">
     <link rel="stylesheet" href="/static/finishing.css?v=1">
 </head>
-<body>
+<body data-active-view="scanner">
   <header class="topbar">
     <div class="brand"><img class="full-brand-logo" src="/static/scamshield-logo.svg" alt="ScamShield — trust intelligence workspace"><span class="brand-project-credit">Osita Michael · L6 Production Project</span></div>
     <div class="workspace-crumb"><span class="crumb-dot"></span> Academic research <b>/</b> Scam prevention</div>
     <nav class="nav"><button class="nav-btn active" data-view="scanner">Scanner</button><button class="nav-btn" data-view="evidence">Evidence lab</button><button class="nav-btn" data-view="dashboard">Research dashboard</button><span class="system-status"><i></i> System online</span><span class="prototype-pill">contextual-v4</span></nav>
     <button id="motionToggle" class="motion-toggle" type="button" aria-pressed="false">Pause motion</button>
   </header>
+  <div class="app-motion-bg" aria-hidden="true"></div>
   <main class="shell">
     <section class="hero view scanner-view">
       <img class="hero-visual-image" src="/static/assets/analyst-hero.png" alt="Illustrative security analyst reviewing a network of suspicious digital messages">
@@ -104,7 +105,6 @@
     </section>
     <section class="privacy-panel view scanner-view" aria-label="Privacy and safety boundary"><div><span class="eyebrow">Privacy and safety</span><h2>Designed for safer review</h2></div><div class="privacy-grid"><span><b>Browser-local OCR</b><small>Image preview and OCR processing stay in the browser; analysed text is sent to this service for the current result.</small></span><span><b>No inbox access</b><small>ScamShield does not connect to or read inboxes automatically.</small></span><span><b>Human decision</b><small>Results are signals, not proof or an automatic block.</small></span><span><b>Redact first</b><small>Remove names, account numbers and private details before analysis.</small></span></div></section>
     <section class="evidence-lab view evidence-view hidden">
-      <div class="section-motion-bg" aria-hidden="true"></div>
       <div class="eyebrow">Multimodal evidence lab</div>
       <h1>Analyse the evidence, not the victim.</h1>
       <p class="dashboard-intro">Upload a screenshot of an email, text message or login page from a public case, university warning or your own redacted test sample. This tool reads visible scam-related text; it is not a face-recognition system and should not be used with portraits.</p>
@@ -122,7 +122,6 @@
       <div class="method-note"><strong>Method boundary:</strong> this prototype can analyse uploaded evidence and source-linked examples, but it does not identify private individuals, infer an offender's home address or claim that a named organisation was breached without an authoritative source.</div>
     </section>
     <section class="dashboard view dashboard-view hidden">
-      <div class="section-motion-bg" aria-hidden="true"></div>
       <div class="eyebrow">Research dashboard</div>
       <h1>What the evidence is telling us</h1>
       <p class="dashboard-intro">This page centres ScamShield’s measured held-out results: what it detected, what it got wrong and what the small dataset can—and cannot—support.</p>
@@ -150,6 +149,6 @@
   <footer><span>ScamShield is a controlled academic prototype.</span><span>Always verify important requests independently. · Build <code>contextual-v4</code></span></footer>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <script src="/static/conversation.js?v=1"></script>
-  <script src="/static/app.js?v=motion-audit-1"></script>
+  <script src="/static/app.js?v=full-page-1"></script>
 </body>
 </html>
