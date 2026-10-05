@@ -416,7 +416,7 @@ const conversationBtn = document.getElementById('conversationBtn');
 const conversationResult = document.getElementById('conversationResult');
 function parseConversationLine(rawLine, index) {
   const raw = rawLine.trim();
-  const quoted = /^>/.test(raw) || /^\s*(?:quote|quoted|example)\s*:/i.test(raw);
+  const quoted = /^>/.test(raw) || /^\s*(?:quote|quoted|example)\s*:/i.test(raw) || /^[\"“‘]/.test(raw);
   const withoutQuote = raw.replace(/^>\s*/, '').replace(/^\s*(?:quote|quoted|example)\s*:\s*/i, '');
   const match = withoutQuote.match(/^([^:]{1,40}):\s*(.+)$/);
   return { index: index + 1, speaker: match ? match[1].trim() : 'Unlabelled speaker', text: match ? match[2].trim() : withoutQuote, quoted };
@@ -426,7 +426,7 @@ function analyseConversationLines(rawLines) {
   const observations = [];
   const denial = /\b(?:i|we|you)\s+(?:did\s+not|didn't|didnt|never|have not|haven't|wasn't|was not)\s+(?:request|ask for|approve|authori[sz]e|send|share|click|open|make|recognise|recognize)\b|\b(?:not|no)\s+(?:requested|authori[sz]ed|approved)\b/i;
   const advice = /\b(?:never|do not|don't|dont|avoid|be careful|remember to|stay safe|report)\b[^.?!]*(?:password|passcode|code|link|payment|bank|account|login|scam|sender)/i;
-  const education = /\b(?:this is|that is|an example of|example:|security advice|awareness|phishing is|scammers? may)\b/i;
+  const education = /\b(?:this is (?:an? )?(?:example|scam|phishing)|that is (?:an? )?(?:example|scam|phishing)|an example of|example:|security advice|security awareness|phishing is|scammers? may)\b/i;
   const credentialRequest = /\b(?:send|share|give|provide|forward|enter|type|reply with|tell me|confirm|verify|submit)\b[^.?!]{0,100}\b(?:password|passcode|one[- ]time code|otp|security code|verification code|login details|sign[- ]in details)\b|\b(?:password|passcode|one[- ]time code|otp|security code|verification code|login details|sign[- ]in details)\b[^.?!]{0,80}\b(?:required|needed|confirm|send|share|enter|provide)\b/i;
   const paymentRequest = /\b(?:send|pay|transfer|wire|settle|authori[sz]e|confirm)\b[^.?!]{0,90}(?:£\s?\d[\d,.]*|\$\s?\d[\d,.]*|€\s?\d[\d,.]*|payment|money|bank details|card details|account number|fee|charge)\b|\b(?:payment|money|bank details|card details|account number|fee|charge)\b[^.?!]{0,70}\b(?:required|needed|confirm|send|pay|transfer|today|now)\b/i;
   const approvalRequest = /\b(?:approve|authori[sz]e|allow|confirm)\b[^.?!]{0,80}\b(?:login|sign[- ]?in|account|payment|request)\b|\b(?:login|sign[- ]?in|account|payment)\b[^.?!]{0,80}\b(?:approval|approve|authori[sz]ation|confirm)\b/i;
