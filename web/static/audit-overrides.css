@@ -122,3 +122,58 @@ textarea:focus, input:focus, .ocr-text:focus { border-color: #63d6c6 !important;
 footer { border-color: #35566a; color: #aec2cf; }
 @media (max-width: 800px) { .journey-controls { justify-content:flex-start; flex-wrap:wrap; } .journey-track { grid-template-columns:1fr !important; } .journey-arrow { display:none; } .journey-step:not(.journey-active) { display:none; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count:1 !important; scroll-behavior:auto !important; transition-duration:.01ms !important; } }
+
+/* Logo correction: keep official marks in a clean, non-button treatment. */
+.scenario-brand {
+  display: flex !important;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  width: auto;
+  max-width: 100%;
+  min-height: 44px;
+  margin: 2px 0 8px;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #e3edf3 !important;
+}
+.scenario-brand img { display: block; width: auto; height: 42px; max-width: 180px; object-fit: contain; }
+.scenario-brand .logo-wordmark, .scenario-brand .brand-text-only { color: #e3edf3; font-size: 13px; line-height: 1.05; letter-spacing: .11em; font-weight: 900; }
+.bank-brand img { width: 46px; height: 46px; }
+.bank-brand .logo-wordmark { color: #63d6c6; }
+.uni-brand .brand-text-only { color: #e3edf3; max-width: 180px; }
+.sport-brand img { width: 50px; height: 50px; }
+.health-brand img { width: 92px; height: 42px; }
+.source-thumb {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 104px;
+  min-width: 104px;
+  height: 58px;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  color: #e3edf3;
+}
+.source-thumb img { width: auto !important; height: 42px !important; max-width: 92px !important; max-height: 48px !important; padding: 0 !important; object-fit: contain !important; }
+.source-thumb .logo-wordmark { color: #63d6c6; font-size: 10px; line-height: 1.05; letter-spacing: .08em; font-weight: 900; }
+.source-thumb img[src*="lloyds-bank.svg"] { content: url('/static/assets/logos/lloyds-bank-official.png') !important; width: 42px !important; height: 42px !important; }
+.source-thumb img[src*="leeds-beckett.svg"] { display: none !important; }
+.source-thumb.uni-thumb::before { content: 'LEEDS BECKETT UNIVERSITY'; display: block; color: #e3edf3; font-size: 10px; line-height: 1.08; letter-spacing: .06em; font-weight: 900; text-align: center; }
+.source-thumb img[src*="premier-league.svg"] { width: 46px !important; height: 46px !important; }
+.source-thumb img[src*="nhs.svg"] { width: 86px !important; height: 36px !important; }
+@media (max-width: 800px) {
+  .scenario-brand { min-height: 38px; }
+  .scenario-brand img { max-width: 150px; height: 36px; }
+  .bank-brand img { width: 38px; height: 38px; }
+  .sport-brand img { width: 42px; height: 42px; }
+  .health-brand img { width: 78px; height: 34px; }
+  .source-thumb { width: 92px; min-width: 92px; }
+}
