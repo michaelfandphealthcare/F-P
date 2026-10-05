@@ -346,8 +346,10 @@ function renderResult(data) {
 function inspectUrl() {
   const raw = urlInput?.value.trim();
   if (!raw) { urlResult.textContent = 'Paste a link first. ScamShield will inspect the text locally and will not open it.'; return; }
+  const extracted = raw.match(/https?:\/\/[^\s<>"']+|www\.[^\s<>"']+/i)?.[0] || raw;
+  const candidate = extracted.replace(/[),.;!?]+$/, '');
   let parsed;
-  try { parsed = new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`); } catch { urlResult.innerHTML = '<strong class="url-danger">Unable to parse this as a normal web address.</strong>'; return; }
+  try { parsed = new URL(/^https?:\/\//i.test(candidate) ? candidate : `https://${candidate}`); } catch { urlResult.innerHTML = '<strong class="url-danger">Unable to parse this as a normal web address.</strong><span>Paste the complete address, for example <b>https://example.com</b>.</span>'; return; }
   const host = parsed.hostname.toLowerCase();
   const findings = [];
   if (parsed.protocol !== 'https:') findings.push('not using HTTPS');
