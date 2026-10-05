@@ -84,7 +84,7 @@ button:focus-visible, summary:focus-visible, input:focus-visible, textarea:focus
   padding:34px 32px 28px;
   border:1px solid rgba(99,214,198,.3);
   border-radius:20px 20px 0 0;
-  background:linear-gradient(90deg,rgba(5,20,31,.94) 0%,rgba(5,20,31,.76) 58%,rgba(5,20,31,.48) 100%);
+  background:linear-gradient(90deg,rgba(5,20,31,.79) 0%,rgba(5,20,31,.56) 58%,rgba(5,20,31,.24) 100%);
 }
 .dashboard-research-copy .eyebrow { display:block; margin:0 0 10px; }
 .dashboard-research-copy h1 { max-width:790px; margin:0; font-size:clamp(34px,4.8vw,58px); line-height:1.01; letter-spacing:-.045em; text-wrap:balance; }

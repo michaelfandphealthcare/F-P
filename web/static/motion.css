@@ -1,7 +1,7 @@
 /* Only the image pixels move; the dark masks and every content layer stay still. */
 .hero {
   isolation: isolate;
-  background: rgba(5, 20, 32, .72) !important;
+  background: rgba(5, 20, 32, .42) !important;
   background-image: none !important;
   animation: none !important;
 }
@@ -13,7 +13,7 @@
   opacity: 1 !important;
   transform: none !important;
   mix-blend-mode: normal !important;
-  background: linear-gradient(90deg, rgba(5,20,32,.96) 0%, rgba(7,27,43,.82) 44%, rgba(7,27,43,.38) 100%) !important;
+  background: linear-gradient(90deg, rgba(5,20,32,.74) 0%, rgba(7,27,43,.5) 44%, rgba(7,27,43,.14) 100%) !important;
   animation: none !important;
 }
 .topbar, .shell, footer { position: relative; z-index: 1; }
@@ -32,7 +32,7 @@ body::before { animation: none !important; }
   inset: -5%;
   background: url('/static/assets/analyst-hero.png') center 43% / cover no-repeat;
   animation: backgroundHome 9s linear infinite alternate;
-  filter: saturate(.98) contrast(1.06) brightness(1.12);
+  filter: saturate(1.12) contrast(1.04) brightness(1.38);
   will-change: transform;
 }
 .app-motion-bg::after {
@@ -40,8 +40,8 @@ body::before { animation: none !important; }
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, rgba(5,20,32,.2), rgba(5,20,32,.34) 52%, rgba(5,20,32,.52)),
-    linear-gradient(90deg, rgba(5,20,32,.76) 0%, rgba(6,24,38,.34) 54%, rgba(6,24,38,.18) 100%);
+    linear-gradient(180deg, rgba(5,20,32,.04), rgba(5,20,32,.1) 52%, rgba(5,20,32,.2)),
+    linear-gradient(90deg, rgba(5,20,32,.25) 0%, rgba(6,24,38,.1) 54%, rgba(6,24,38,.03) 100%);
 }
 body[data-active-view="evidence"] .app-motion-bg::before { animation-name: backgroundEvidence; animation-duration: 10s; }
 body[data-active-view="dashboard"] .app-motion-bg::before { animation-name: backgroundDashboard; animation-duration: 11s; }
