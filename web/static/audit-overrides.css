@@ -213,3 +213,6 @@ footer { border-color: #35566a; color: #aec2cf; }
   .source-thumb.bank-thumb img { width:44px !important; height:44px !important; }
   .source-thumb.bank-thumb .logo-wordmark, .source-thumb.uni-thumb .brand-text-only { font-size:10px; }
 }
+
+/* The supplied Lloyds raster contains a partial embedded wordmark; show only the horse mark and use the accessible text label beside it. */
+.scenario-brand.bank-brand img, .source-thumb.bank-thumb img { clip-path:inset(0 0 34% 0); margin-bottom:-16px; }
