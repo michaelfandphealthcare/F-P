@@ -246,3 +246,18 @@ footer { border-color: #35566a; color: #aec2cf; }
 @keyframes sectorBreathe { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-3px); } }
 @keyframes universityPulse { 0%,100% { filter:drop-shadow(0 0 0 rgba(192,132,252,0)); } 50% { filter:drop-shadow(0 0 8px rgba(192,132,252,.28)); } }
 @media (prefers-reduced-motion: reduce) { .sector-visual, .generic-university-mark, .conversation-result.is-ready, .conversation-result.is-ready .conversation-observation { animation:none !important; opacity:1 !important; transform:none !important; } }
+
+/* Make live motion clearly visible during normal use, while respecting reduced-motion preferences. */
+.fraud-path-stage:after { animation-duration:3.8s !important; opacity:.85; }
+.fraud-scene { animation-duration:3.2s !important; }
+.fraud-scene:after { animation-duration:3.4s !important; }
+.journey-scene:after { animation-duration:3.2s !important; }
+.journey-step .journey-art { animation: comicBreath 4.4s ease-in-out infinite alternate; transform-origin:center; }
+.journey-step:nth-of-type(1) .journey-art { animation-delay:.15s; }
+.journey-step:nth-of-type(3) .journey-art { animation-delay:.45s; }
+.journey-step:nth-of-type(5) .journey-art { animation-delay:.75s; }
+.journey-step:nth-of-type(7) .journey-art { animation-delay:1.05s; }
+.method-pulse, .pulse-ring { animation-duration:1.25s !important; }
+.sector-visual { animation-duration:4.8s !important; }
+@keyframes comicBreath { from { transform:scale(1); } to { transform:scale(1.035); } }
+@media (prefers-reduced-motion: reduce) { .journey-step .journey-art { animation:none !important; } }
