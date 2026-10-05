@@ -90,7 +90,8 @@ function renderChallengeEvaluation(evaluation) {
   const metrics = evaluation.metrics || {};
   const matrix = metrics.confusion_matrix || {};
   const failures = evaluation.failure_examples || [];
-  root.innerHTML = `<div class="challenge-copy"><span class="chart-kicker">Separate robustness check</span><h2>Broader challenge set</h2><p>${escapeHtml(evaluation.test_rows)} author-created messages · 12 scam and 12 legitimate · model ${escapeHtml(evaluation.model_version)} · ${escapeHtml(evaluation.evaluation_date)}</p><small>This set was not used for training. It is broader than the held-out set, but it is still hand-authored and not representative of real-world prevalence.</small></div><div class="challenge-metrics"><span><b>${Math.round((metrics.precision || 0) * 100)}%</b><small>precision</small></span><span><b>${Math.round((metrics.recall || 0) * 100)}%</b><small>recall</small></span><span><b>${Math.round((metrics.f1 || 0) * 100)}%</b><small>F1</small></span><span><b>${matrix.false_positive || 0}</b><small>false alarms</small></span><span><b>${matrix.false_negative || 0}</b><small>missed scams</small></span></div><div class="challenge-failures"><strong>Observed failure cases</strong>${failures.map(item => `<p><b>${escapeHtml(item.scenario)}</b> — ${escapeHtml(item.summary)}</p>`).join('')}</div>`;
+  const rows = [['Precision', metrics.precision || 0], ['Recall', metrics.recall || 0], ['F1', metrics.f1 || 0]];
+  root.innerHTML = `<div class="challenge-copy"><span class="chart-kicker">Separate robustness check</span><h2>Broader challenge set</h2><p>${escapeHtml(evaluation.test_rows)} author-created messages · ${escapeHtml(evaluation.class_distribution?.phishing || 0)} scam · ${escapeHtml(evaluation.class_distribution?.legitimate || 0)} legitimate</p><small>This set was not used for training. It is broader than the held-out set, but remains hand-authored and is not representative of real-world prevalence.</small></div><div class="challenge-bar-chart" role="img" aria-label="Challenge set performance: precision ${Math.round((metrics.precision || 0) * 100)} percent, recall ${Math.round((metrics.recall || 0) * 100)} percent, F1 ${Math.round((metrics.f1 || 0) * 100)} percent"><div class="percentage-axis"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>${rows.map(([label, value]) => `<div class="percentage-bar-row"><b>${label}</b><div class="percentage-track"><span class="percentage-fill" style="width:${Math.round(value * 100)}%"></span></div><strong>${Math.round(value * 100)}%</strong></div>`).join('')}</div><div class="challenge-error-summary"><span><b>${matrix.false_positive || 0}</b><small>false alarms</small></span><span><b>${matrix.false_negative || 0}</b><small>missed scams</small></span></div><div class="challenge-failures"><strong>Observed failure cases</strong>${failures.map(item => `<p><b>${escapeHtml(item.scenario)}</b> — ${escapeHtml(item.summary)}</p>`).join('')}</div><details class="chart-data-table"><summary>View accessible data table</summary><table><caption>Broader challenge-set performance</caption><thead><tr><th>Measure</th><th>Value</th></tr></thead><tbody>${rows.map(([label, value]) => `<tr><th>${label}</th><td>${Math.round(value * 100)}%</td></tr>`).join('')}<tr><th>False alarms</th><td>${matrix.false_positive || 0}</td></tr><tr><th>Missed scams</th><td>${matrix.false_negative || 0}</td></tr></tbody></table></details>`;
 }
 
 if (imageInput) imageInput.addEventListener('change', () => {
@@ -220,57 +221,88 @@ function renderEvidence(items) {
 function renderEvaluation(evaluation) {
   const root = document.getElementById('evaluationPanel');
   if (!root || !evaluation) return;
-  const m = evaluation.metrics || {};
+  const metrics = evaluation.metrics || {};
   const classes = evaluation.class_distribution || {};
-  root.innerHTML = `<div class="evaluation-summary-copy"><span class="eyebrow">Measured held-out evaluation</span><h2>${escapeHtml(evaluation.dataset_version || 'Versioned dataset')}</h2><p>${escapeHtml(evaluation.test_rows)} messages · evaluated ${escapeHtml(evaluation.evaluation_date)} · model ${escapeHtml(evaluation.model_version)}</p></div><div class="evaluation-summary-stats"><span><b>${escapeHtml(evaluation.test_rows)}</b><small>messages</small></span><span><b>${escapeHtml(classes.phishing || 0)}</b><small>scams</small></span><span><b>${escapeHtml(classes.legitimate || 0)}</b><small>legitimate</small></span><span><b>${Math.round((m.recall || 0) * 100)}%</b><small>recall</small></span></div><small class="evaluation-note">Small hand-curated held-out set; not a claim of real-world accuracy.</small>`;
+  const errors = (metrics.false_positives || 0) + (metrics.missed_scams || 0);
+  root.innerHTML = `<div class="evaluation-summary-stats"><span><b>${escapeHtml(evaluation.test_rows)}</b><small>evaluated</small></span><span><b>${escapeHtml(classes.phishing || 0)}</b><small>scams</small></span><span><b>${escapeHtml(classes.legitimate || 0)}</b><small>legitimate</small></span><span><b>${errors}</b><small>errors in this split</small></span></div>`;
+  const dateNode = document.getElementById('dashboardEvaluationDate');
+  const modelNode = document.getElementById('dashboardModelVersion');
+  const datasetNode = document.getElementById('dashboardDatasetVersion');
+  if (dateNode) {
+    const parsed = new Date(`${evaluation.evaluation_date}T00:00:00Z`);
+    dateNode.textContent = Number.isNaN(parsed.getTime()) ? evaluation.evaluation_date : new Intl.DateTimeFormat('en-GB', { day:'numeric', month:'long', year:'numeric', timeZone:'UTC' }).format(parsed);
+  }
+  if (modelNode) modelNode.textContent = evaluation.model_version || 'Not recorded';
+  if (datasetNode) datasetNode.textContent = evaluation.dataset_version || 'Not recorded';
 }
 
 function renderMeasuredCharts(evaluation) {
   const metrics = evaluation?.metrics || {};
   const matrix = metrics.confusion_matrix || {};
-  const confusion = [
-    ['Correctly legitimate', matrix.true_negative || 0, 'tn'],
-    ['False alarm', matrix.false_positive || 0, 'fp'],
-    ['Missed scam', matrix.false_negative || 0, 'fn'],
-    ['Correctly detected scam', matrix.true_positive || 0, 'tp'],
+  const outcomeRows = [
+    ['Correct legitimate', matrix.true_negative || 0, 'correct-clear'],
+    ['Detected scams', matrix.true_positive || 0, 'detected'],
+    ['False alarms', matrix.false_positive || 0, 'false-alarm'],
+    ['Missed scams', matrix.false_negative || 0, 'missed'],
   ];
   const confusionChart = document.getElementById('confusionChart');
   if (confusionChart) {
-    const max = Math.max(1, ...confusion.map(item => item[1]));
-    confusionChart.innerHTML = `<div class="matrix-axis"><span></span><b>Predicted legitimate</b><b>Predicted scam</b></div><div class="matrix-row"><b>Actual legitimate</b><span class="matrix-cell tn" style="--cell:${matrix.true_negative / max}" title="Correctly legitimate: ${matrix.true_negative}">${matrix.true_negative}<small>correct</small></span><span class="matrix-cell fp" style="--cell:${matrix.false_positive / max}" title="False alarm: ${matrix.false_positive}">${matrix.false_positive}<small>false alarm</small></span></div><div class="matrix-row"><b>Actual scam</b><span class="matrix-cell fn" style="--cell:${matrix.false_negative / max}" title="Missed scam: ${matrix.false_negative}">${matrix.false_negative}<small>missed</small></span><span class="matrix-cell tp" style="--cell:${matrix.true_positive / max}" title="Correctly detected scam: ${matrix.true_positive}">${matrix.true_positive}<small>correct</small></span></div>`;
+    const max = Math.max(1, ...outcomeRows.map(item => item[1]));
+    const ticks = [0, Math.ceil(max * .25), Math.ceil(max * .5), Math.ceil(max * .75), max];
+    confusionChart.setAttribute('role', 'img');
+    confusionChart.setAttribute('aria-label', outcomeRows.map(([label, value]) => `${label}: ${value}`).join('; '));
+    confusionChart.innerHTML = `<div class="count-axis"><span></span><div>${ticks.map(tick => `<i>${tick}</i>`).join('')}</div><span></span></div>${outcomeRows.map(([label, value, tone]) => `<div class="count-bar-row"><b>${label}</b><div class="count-track"><span class="count-fill ${tone}${value === 0 ? ' zero' : ''}" style="width:${Math.round((value / max) * 100)}%"></span></div><strong>${value}</strong></div>`).join('')}<div class="chart-axis-title">Number of messages</div>`;
   }
   const confusionTable = document.getElementById('confusionTable');
-  if (confusionTable) confusionTable.innerHTML = `<table><caption>Confusion matrix counts</caption><thead><tr><th>Actual / predicted</th><th>Legitimate</th><th>Scam</th></tr></thead><tbody><tr><th>Legitimate</th><td>${matrix.true_negative || 0} correct</td><td>${matrix.false_positive || 0} false alarms</td></tr><tr><th>Scam</th><td>${matrix.false_negative || 0} missed</td><td>${matrix.true_positive || 0} correct</td></tr></tbody></table>`;
+  if (confusionTable) confusionTable.innerHTML = `<details class="chart-data-table"><summary>View accessible data table</summary><table><caption>Decision outcome counts</caption><thead><tr><th>Outcome</th><th>Messages</th></tr></thead><tbody>${outcomeRows.map(([label, value]) => `<tr><th>${label}</th><td>${value}</td></tr>`).join('')}</tbody></table></details>`;
   const metricChart = document.getElementById('metricChart');
   const metricRows = [['Precision', metrics.precision || 0, 'precision'], ['Recall', metrics.recall || 0, 'recall'], ['F1', metrics.f1 || 0, 'f1']];
-  if (metricChart) metricChart.innerHTML = `<div class="metric-scale"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>${metricRows.map(([label, value, key]) => `<div class="metric-row"><b>${label}</b><div class="metric-track"><span class="metric-fill ${key}" style="width:${Math.round(value * 100)}%"></span></div><strong>${Math.round(value * 100)}%</strong></div>`).join('')}`;
+  if (metricChart) {
+    metricChart.setAttribute('role', 'img');
+    metricChart.setAttribute('aria-label', metricRows.map(([label, value]) => `${label}: ${Math.round(value * 100)} percent`).join('; '));
+    metricChart.innerHTML = `<div class="percentage-axis"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>${metricRows.map(([label, value, key]) => `<div class="percentage-bar-row"><b>${label}</b><div class="percentage-track"><span class="percentage-fill ${key}" style="width:${Math.round(value * 100)}%"></span></div><strong>${Math.round(value * 100)}%</strong></div>`).join('')}<div class="chart-axis-title">Percentage (%)</div>`;
+  }
   const metricTable = document.getElementById('metricTable');
-  if (metricTable) metricTable.innerHTML = `<table><caption>Measured performance percentages</caption><thead><tr><th>Metric</th><th>Value</th><th>Meaning</th></tr></thead><tbody><tr><th>Precision</th><td>${Math.round((metrics.precision || 0) * 100)}%</td><td>How many flagged messages were scams</td></tr><tr><th>Recall</th><td>${Math.round((metrics.recall || 0) * 100)}%</td><td>How many scams were detected</td></tr><tr><th>F1</th><td>${Math.round((metrics.f1 || 0) * 100)}%</td><td>Combined precision/recall measure</td></tr></tbody></table>`;
+  if (metricTable) metricTable.innerHTML = `<details class="chart-data-table"><summary>View accessible data table</summary><table><caption>Measured performance percentages</caption><thead><tr><th>Metric</th><th>Value</th><th>Meaning</th></tr></thead><tbody><tr><th>Precision</th><td>${Math.round((metrics.precision || 0) * 100)}%</td><td>Share of flagged messages that were scams</td></tr><tr><th>Recall</th><td>${Math.round((metrics.recall || 0) * 100)}%</td><td>Share of scams that were detected</td></tr><tr><th>F1</th><td>${Math.round((metrics.f1 || 0) * 100)}%</td><td>Combined precision and recall</td></tr></tbody></table></details>`;
+
+  const baselineChart = document.getElementById('baselineChart');
+  const baselineTable = document.getElementById('baselineTable');
+  if (baselineChart) {
+    if (evaluation.baseline_metrics) {
+      const baseline = evaluation.baseline_metrics;
+      const rows = [['Precision', metrics.precision || 0, baseline.precision || 0], ['Recall', metrics.recall || 0, baseline.recall || 0], ['F1', metrics.f1 || 0, baseline.f1 || 0]];
+      baselineChart.setAttribute('role', 'img');
+      baselineChart.setAttribute('aria-label', rows.map(([label, value, base]) => `${label}: ScamShield ${Math.round(value * 100)} percent, TF-IDF baseline ${Math.round(base * 100)} percent`).join('; '));
+      baselineChart.innerHTML = `<div class="comparison-legend"><span><i class="legend-swatch model"></i>ScamShield</span><span><i class="legend-swatch baseline"></i>TF-IDF baseline</span></div><div class="comparison-axis"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>${rows.map(([label, value, base]) => `<div class="comparison-metric-block"><b>${label}</b><div class="comparison-series-row"><small>ScamShield</small><div class="comparison-track"><span class="comparison-fill model" style="width:${Math.round(value * 100)}%"></span></div><strong>${Math.round(value * 100)}%</strong></div><div class="comparison-series-row"><small>Baseline</small><div class="comparison-track"><span class="comparison-fill baseline" style="width:${Math.round(base * 100)}%"></span></div><strong>${Math.round(base * 100)}%</strong></div></div>`).join('')}<p class="baseline-method">${escapeHtml(baseline.method || evaluation.baseline_status || '')}</p>`;
+      if (baselineTable) baselineTable.innerHTML = `<details class="chart-data-table"><summary>View accessible data table</summary><table><caption>ScamShield and TF-IDF baseline comparison</caption><thead><tr><th>Metric</th><th>ScamShield</th><th>TF-IDF baseline</th></tr></thead><tbody>${rows.map(([label, value, base]) => `<tr><th>${label}</th><td>${Math.round(value * 100)}%</td><td>${Math.round(base * 100)}%</td></tr>`).join('')}</tbody></table></details>`;
+    } else {
+      baselineChart.className = 'pending-state';
+      baselineChart.innerHTML = `<div class="pending-icon" aria-hidden="true">—</div><strong>Baseline comparison pending</strong><p>${escapeHtml(evaluation.baseline_status || 'No independently measured baseline is available for this split.')}</p>`;
+      if (baselineTable) baselineTable.innerHTML = '';
+    }
+  }
+
   const scenarioChart = document.getElementById('scenarioChart');
+  const scenarioTable = document.getElementById('scenarioTable');
   if (scenarioChart) {
     const records = evaluation.records || [];
     if (!records.length) {
       scenarioChart.className = 'pending-state';
       scenarioChart.innerHTML = `<div class="pending-icon" aria-hidden="true">—</div><strong>Scenario comparison pending</strong><p>${escapeHtml(evaluation.scenario_performance_status || 'No scenario-level records are available.')}</p>`;
+      if (scenarioTable) scenarioTable.innerHTML = '';
     } else {
-    scenarioChart.innerHTML = records.map(record => {
-      const actual = record.label === 'phishing' ? 'scam' : 'legitimate';
-      const predicted = record.prediction === 1 ? 'scam' : 'legitimate';
-      const correct = actual === predicted;
-      const status = correct ? (actual === 'scam' ? 'Detected' : 'Correctly clear') : (actual === 'scam' ? 'Missed' : 'False alarm');
-      const tone = correct ? (actual === 'scam' ? 'success' : 'neutral') : 'error';
-      return `<div class="scenario-outcome-row"><span class="scenario-outcome-label">${escapeHtml(record.scenario)}</span><span class="scenario-outcome-track"><span class="scenario-outcome-fill ${tone}"></span></span><strong class="scenario-outcome-status ${tone}">${status}</strong><small>n=1</small></div>`;
-    }).join('');
-    }
-  }
-  const baselineChart = document.getElementById('baselineChart');
-  if (baselineChart) {
-    if (evaluation.baseline_metrics) {
-      const baseline = evaluation.baseline_metrics;
-      const rows = [['Precision', metrics.precision || 0, baseline.precision || 0], ['Recall', metrics.recall || 0, baseline.recall || 0], ['F1', metrics.f1 || 0, baseline.f1 || 0]];
-      baselineChart.innerHTML = `<div class="grouped-metric-legend"><span><i class="legend-swatch model"></i>ScamShield</span><span><i class="legend-swatch baseline"></i>TF-IDF-only baseline</span></div>${rows.map(([label, value, base]) => `<div class="grouped-metric-row"><b>${label}</b><div class="grouped-track"><span class="grouped-fill model" style="width:${Math.round(value * 100)}%"></span><span class="grouped-fill baseline" style="width:${Math.round(base * 100)}%"></span></div><small>${Math.round(value * 100)}% / ${Math.round(base * 100)}%</small></div>`).join('')}<p class="baseline-method">${escapeHtml(baseline.method || evaluation.baseline_status || '')}</p>`;
-    } else {
-      baselineChart.innerHTML = `<div class="pending-icon" aria-hidden="true">—</div><strong>Baseline comparison pending</strong><p>${escapeHtml(evaluation.baseline_status || 'No independently measured baseline is available for this split.')}</p>`;
+      scenarioChart.setAttribute('role', 'img');
+      scenarioChart.setAttribute('aria-label', records.map(record => `${record.scenario}: ${Math.round((record.risk_score || 0) * 100)} percent, ${record.label === 'phishing' ? 'scam example' : 'legitimate example'}`).join('; '));
+      scenarioChart.className = 'scenario-score-chart';
+      scenarioChart.innerHTML = `<div class="scenario-score-legend"><span><i class="legend-swatch legitimate"></i>Legitimate example</span><span><i class="legend-swatch scam"></i>Scam example</span><span><i class="legend-threshold"></i>Decision threshold (35%)</span></div><div class="scenario-score-axis"><span></span><span></span><div><i>0%</i><i class="threshold-tick">35%</i><i>50%</i><i>75%</i><i>100%</i></div><span></span></div>${records.map(record => {
+        const score = Math.round((record.risk_score || 0) * 100);
+        const actualScam = record.label === 'phishing';
+        const predictedScam = record.prediction === 1;
+        const correct = actualScam === predictedScam;
+        const tone = correct ? (actualScam ? 'scam' : 'legitimate') : (actualScam ? 'missed' : 'false-alarm');
+        return `<div class="scenario-score-row"><b>${escapeHtml(record.scenario)}</b><small>${actualScam ? 'Scam example' : 'Legitimate example'}</small><div class="scenario-score-track"><span class="scenario-score-fill ${tone}" style="width:${score}%"></span><i class="scenario-threshold" aria-hidden="true"></i></div><strong>${score}%</strong></div>`;
+      }).join('')}<div class="chart-axis-title">Model screening score (%) · not a probability</div>`;
+      if (scenarioTable) scenarioTable.innerHTML = `<details class="chart-data-table"><summary>View accessible data table</summary><table><caption>Case-level screening scores</caption><thead><tr><th>Scenario</th><th>Actual class</th><th>Prediction</th><th>Score</th></tr></thead><tbody>${records.map(record => `<tr><th>${escapeHtml(record.scenario)}</th><td>${record.label === 'phishing' ? 'Scam' : 'Legitimate'}</td><td>${record.prediction === 1 ? 'Scam' : 'Legitimate'}</td><td>${Math.round((record.risk_score || 0) * 100)}%</td></tr>`).join('')}</tbody></table></details>`;
     }
   }
 }

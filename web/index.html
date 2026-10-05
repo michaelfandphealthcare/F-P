@@ -18,7 +18,7 @@
     <link rel="stylesheet" href="/static/polish.css?v=1">
     <link rel="stylesheet" href="/static/audit-overrides.css?v=20261005">
     <link rel="stylesheet" href="/static/motion.css?v=full-page-2">
-    <link rel="stylesheet" href="/static/finishing.css?v=1">
+    <link rel="stylesheet" href="/static/finishing.css?v=dashboard-2">
 </head>
 <body data-active-view="scanner">
   <header class="topbar">
@@ -122,23 +122,37 @@
       <div class="method-note"><strong>Method boundary:</strong> this prototype can analyse uploaded evidence and source-linked examples, but it does not identify private individuals, infer an offender's home address or claim that a named organisation was breached without an authoritative source.</div>
     </section>
     <section class="dashboard view dashboard-view hidden">
-      <div class="eyebrow">Research dashboard</div>
-      <h1>What the evidence is telling us</h1>
-      <p class="dashboard-intro">This page centres ScamShield’s measured held-out results: what it detected, what it got wrong and what the small dataset can—and cannot—support.</p>
-      <div class="dashboard-intro-rule"><span class="method-pulse"></span><strong>Evidence rule</strong><span>Measured model results are separated from synthetic demonstrations and public background context.</span></div>
+      <header class="dashboard-research-hero">
+        <div class="dashboard-research-copy"><span class="eyebrow">Research dashboard</span><h1>How well does ScamShield detect suspicious messages?</h1><p>Measured results, limitations and scenario evidence from the current prototype.</p></div>
+        <dl class="dashboard-metadata" aria-label="Evaluation metadata"><div><dt>Evaluation</dt><dd id="dashboardEvaluationDate">5 October 2026</dd></div><div><dt>Model</dt><dd id="dashboardModelVersion">contextual-baseline-v4</dd></div><div><dt>Dataset</dt><dd id="dashboardDatasetVersion">heldout_messages-v1</dd></div></dl>
+      </header>
+      <div class="dashboard-evidence-warning" role="note"><span aria-hidden="true">!</span><strong>Early evidence</strong><p>12 hand-curated messages cannot establish real-world reliability.</p></div>
 
-      <div id="evaluationPanel" class="evaluation-panel evaluation-summary" aria-live="polite"><div class="evaluation-summary-copy"><span class="eyebrow">Measured held-out evaluation</span><h2>Held-out messages v1</h2><p>12 messages · evaluated 2026-10-05 · model contextual-baseline-v4</p></div><div class="evaluation-summary-stats"><span><b>12</b><small>messages</small></span><span><b>5</b><small>scams</small></span><span><b>7</b><small>legitimate</small></span><span><b>100%</b><small>recall</small></span></div><small class="evaluation-note">Small hand-curated held-out set; not a claim of real-world accuracy.</small></div>
+      <section class="dashboard-scope" aria-labelledby="researchScopeHeading">
+        <div class="dashboard-section-heading"><div><span class="chart-kicker">Project coverage</span><h2 id="researchScopeHeading">Research scope</h2></div><p>Four scenario families connect the evaluation to the project’s banking, university, football and healthcare use cases.</p></div>
+        <div class="dashboard-scope-grid">
+          <article class="dashboard-scope-card scope-bank"><div><strong>Banking</strong><span>Scenario family</span></div></article>
+          <article class="dashboard-scope-card scope-university"><div><strong>Universities</strong><span>Scenario family</span></div></article>
+          <article class="dashboard-scope-card scope-football"><div><strong>Football</strong><span>Scenario family</span></div></article>
+          <article class="dashboard-scope-card scope-healthcare"><div><strong>Healthcare</strong><span>Scenario family</span></div></article>
+        </div>
+      </section>
 
-      <div class="results-chart-grid">
-        <article class="chart-card results-chart-card confusion-card"><div class="chart-head"><div><span class="chart-kicker">Measured result</span><h2>Confusion matrix</h2><p>Counts of correct decisions and errors in the held-out set.</p></div><span class="chart-tag measured">Measured</span></div><div id="confusionChart" class="confusion-matrix" aria-label="Confusion matrix chart"></div><div id="confusionTable" class="accessible-table"></div><p class="chart-explanation"><strong>What this tells us:</strong> this run detected all five scams and correctly cleared all seven legitimate examples. The small hand-curated split cannot establish real-world reliability.</p></article>
-        <article class="chart-card results-chart-card"><div class="chart-head"><div><span class="chart-kicker">Measured result</span><h2>Precision, recall and F1</h2><p>Percentages use a consistent 0–100% scale.</p></div><span class="chart-tag measured">Measured</span></div><div id="metricChart" class="metric-chart" aria-label="Precision, recall and F1 chart"></div><div id="metricTable" class="accessible-table"></div><p class="chart-explanation"><strong>Plain English:</strong> on this small held-out split, all three metrics are 100% because there were no false alarms or missed scams. This is not evidence of real-world reliability.</p></article>
-        <article class="chart-card results-chart-card"><div class="chart-head"><div><span class="chart-kicker">Comparison</span><h2>ScamShield vs baseline</h2><p>Same held-out split and metrics using a fixed TF-IDF-only comparator.</p></div><span class="chart-tag measured">Measured</span></div><div id="baselineChart" class="pending-state" aria-live="polite"></div><p class="chart-explanation"><strong>Plain English:</strong> the comparison shows whether contextual rules improve the underlying text model on this exact split.</p></article>
-        <article class="chart-card results-chart-card scenario-performance-card"><div class="chart-head"><div><span class="chart-kicker">Measured sample</span><h2>Observed outcomes by scenario</h2><p>One held-out observation per named scenario is shown transparently.</p></div><span class="chart-tag measured">Measured</span></div><div id="scenarioChart" class="scenario-outcomes"></div><p class="chart-explanation"><strong>How to read this:</strong> these are individual held-out outcomes, not stable scenario-level performance rates. More labelled examples are needed for reliable comparison.</p></article>
+      <section class="measured-evidence" aria-labelledby="measuredEvidenceHeading">
+        <div class="measured-evidence-heading"><div><span class="chart-kicker">Versioned evaluation</span><h2 id="measuredEvidenceHeading">Measured model evidence</h2><p>Results from the held-out set—not synthetic demonstration counts.</p></div><div id="evaluationPanel" class="evaluation-panel evaluation-summary" aria-live="polite"><div class="evaluation-summary-stats"><span><b>12</b><small>evaluated</small></span><span><b>5</b><small>scams</small></span><span><b>7</b><small>legitimate</small></span><span><b>0</b><small>errors in this split</small></span></div></div></div>
+
+        <div class="results-chart-grid">
+          <article class="chart-card results-chart-card confusion-card"><div class="chart-head"><div><span class="chart-kicker">Measured counts</span><h2>Decision outcomes</h2><p>Correct decisions and errors on a 0–7 message scale.</p></div><span class="chart-tag measured">Measured</span></div><div id="confusionChart" class="outcome-bar-chart" aria-label="Decision outcome count chart"></div><div id="confusionTable" class="accessible-table"></div><p class="chart-explanation"><strong>What this tells us:</strong> this run detected all five scams and cleared all seven legitimate examples. The sample is too small to establish real-world reliability.</p></article>
+          <article class="chart-card results-chart-card"><div class="chart-head"><div><span class="chart-kicker">Measured rates</span><h2>Precision, recall and F1</h2><p>Every metric uses the same clearly labelled 0–100% scale.</p></div><span class="chart-tag measured">Measured</span></div><div id="metricChart" class="metric-chart" aria-label="Precision, recall and F1 horizontal bar chart"></div><div id="metricTable" class="accessible-table"></div><p class="chart-explanation"><strong>Plain English:</strong> all three metrics are 100% because this small split contains no false alarms or missed scams. Perfect here does not mean proven in real-world use.</p></article>
+          <article class="chart-card results-chart-card wide-chart-card"><div class="chart-head"><div><span class="chart-kicker">Measured comparison</span><h2>ScamShield compared with baseline</h2><p>Paired bars compare the same held-out messages with a fixed TF-IDF-only model.</p></div><span class="chart-tag measured">Measured</span></div><div id="baselineChart" class="comparison-bar-chart" aria-live="polite"></div><div id="baselineTable" class="accessible-table"></div><p class="chart-explanation"><strong>How to read this:</strong> higher bars indicate stronger performance on this exact split; the baseline is a research comparator, not a production benchmark.</p></article>
+          <article class="chart-card results-chart-card wide-chart-card scenario-performance-card"><div class="chart-head"><div><span class="chart-kicker">Case-level evidence</span><h2>Case-level screening scores</h2><p>Each row is one held-out message; the dashed marker is the 35% decision threshold.</p></div><span class="chart-tag measured">Measured</span></div><div id="scenarioChart" class="scenario-score-chart" aria-label="Case-level model screening score chart"></div><div id="scenarioTable" class="accessible-table"></div><p class="chart-explanation"><strong>Important:</strong> scores are model outputs, not probabilities. With only one message per named scenario, these rows are observations—not stable scenario performance rates.</p></article>
+        </div>
+      </section>
+
+      <div class="dashboard-meaning-grid">
+        <section id="challengePanel" class="challenge-panel" aria-live="polite"><div class="challenge-copy"><span class="chart-kicker">Separate robustness check</span><h2>Broader challenge set</h2><p>Loading the versioned challenge evaluation…</p></div></section>
+        <section class="interpretation-panel"><div><span class="chart-kicker">Interpretation</span><h2>What the result means</h2></div><div class="interpretation-grid"><p><strong>Strength</strong><span>All five scam messages in the held-out set were detected.</span></p><p class="caution-copy"><strong>Limitation</strong><span>The result comes from 12 hand-curated messages and may not generalise.</span></p><p><strong>Next evaluation step</strong><span>Test a larger, independently sourced set with more paraphrases and edge cases.</span></p></div></section>
       </div>
-
-      <section class="interpretation-panel"><div><span class="chart-kicker">Interpretation</span><h2>What the result means</h2></div><div class="interpretation-grid"><p><strong>Strength:</strong> all five phishing messages in this held-out set were detected.</p><p class="caution-copy"><strong>Caution:</strong> a perfect score on only 12 hand-curated messages may reflect limited coverage and rule overlap.</p><p><strong>Boundary:</strong> this is decision support, not proof of fraud or evidence of real-world reliability.</p></div></section>
-
-      <section id="challengePanel" class="challenge-panel" aria-live="polite"><div class="challenge-copy"><span class="chart-kicker">Separate robustness check</span><h2>Broader challenge set</h2><p>Loading the versioned challenge evaluation…</p></div></section>
 
       <section class="demo-section"><div class="section-kicker"><div><span class="chart-kicker">Secondary view</span><h2>Demonstration dataset</h2><p>Useful synthetic counts for showing the prototype’s research scenarios. They are not the held-out evaluation above.</p></div><span class="chart-tag synthetic">Synthetic</span></div><div class="demo-meta"><span><b>120</b> controlled scenario mentions</span><span><b>5</b> scenario categories</span><span><b>Multiple signals</b> can appear in one message</span></div><div class="demo-chart-grid"><article class="chart-card"><div class="chart-head"><div><h3>Scenario distribution</h3><p>Counts in the demonstration set</p></div><span class="chart-tag synthetic">Synthetic</span></div><div id="sectorChart" class="bars"></div><div class="chart-note">Not a national crime statistic and not the held-out test set.</div></article><article class="chart-card"><div class="chart-head"><div><h3>Warning-sign mentions</h3><p>A message can contain more than one signal</p></div><span class="chart-tag synthetic">Synthetic</span></div><div id="signalChart" class="bars"></div><div class="chart-note">Demonstration counts only; not measured detection performance.</div></article></div></section>
 
@@ -149,6 +163,6 @@
   <footer><span>ScamShield is a controlled academic prototype.</span><span>Always verify important requests independently. · Build <code>contextual-v4</code></span></footer>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <script src="/static/conversation.js?v=1"></script>
-  <script src="/static/app.js?v=full-page-1"></script>
+  <script src="/static/app.js?v=dashboard-2"></script>
 </body>
 </html>
