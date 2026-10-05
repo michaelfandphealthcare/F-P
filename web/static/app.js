@@ -232,11 +232,11 @@ function renderMeasuredCharts(evaluation) {
   if (metricTable) metricTable.innerHTML = `<table><caption>Measured performance percentages</caption><thead><tr><th>Metric</th><th>Value</th><th>Meaning</th></tr></thead><tbody><tr><th>Precision</th><td>${Math.round((metrics.precision || 0) * 100)}%</td><td>How many flagged messages were scams</td></tr><tr><th>Recall</th><td>${Math.round((metrics.recall || 0) * 100)}%</td><td>How many scams were detected</td></tr><tr><th>F1</th><td>${Math.round((metrics.f1 || 0) * 100)}%</td><td>Combined precision/recall measure</td></tr></tbody></table>`;
   const scenarioChart = document.getElementById('scenarioChart');
   if (scenarioChart) {
-    if (String(evaluation.scenario_performance_status || '').toLowerCase().includes('pending')) {
-      scenarioChart.className = 'pending-state';
-      scenarioChart.innerHTML = `<div class="pending-icon" aria-hidden="true">—</div><strong>Scenario comparison pending</strong><p>${escapeHtml(evaluation.scenario_performance_status)}</p>`;
-    } else {
     const records = evaluation.records || [];
+    if (!records.length) {
+      scenarioChart.className = 'pending-state';
+      scenarioChart.innerHTML = `<div class="pending-icon" aria-hidden="true">—</div><strong>Scenario comparison pending</strong><p>${escapeHtml(evaluation.scenario_performance_status || 'No scenario-level records are available.')}</p>`;
+    } else {
     scenarioChart.innerHTML = records.map(record => {
       const actual = record.label === 'phishing' ? 'scam' : 'legitimate';
       const predicted = record.prediction === 1 ? 'scam' : 'legitimate';
@@ -282,6 +282,16 @@ message.addEventListener('input', () => {
     resultPanel.innerHTML = '<div class="result-placeholder"><div class="shield">↻</div><h2>Result needs refreshing</h2><p>The message changed. Analyse this current text to replace the previous result.</p></div>';
   }
 });
+function showScannerAndFocus({ announce = '' } = {}) {
+  document.querySelectorAll('.nav-btn').forEach(x => x.classList.toggle('active', x.dataset.view === 'scanner'));
+  document.querySelectorAll('.scanner-view').forEach(x => x.classList.remove('hidden'));
+  document.querySelector('.dashboard-view')?.classList.add('hidden');
+  document.querySelector('.evidence-view')?.classList.add('hidden');
+  document.querySelector('.workspace')?.scrollIntoView({behavior: 'smooth', block: 'start'});
+  message?.focus({preventScroll: true});
+  if (announce) errorBox.textContent = announce;
+}
+
 exampleBtn.addEventListener('click', () => {
   const item = demoExamples.length ? demoExamples[Math.floor(Math.random() * demoExamples.length)] : { text: 'Urgent: your account will be suspended today. Confirm your password and payment details using the link below to keep access.' };
   message.value = item.text;
@@ -404,6 +414,46 @@ resultPanel.addEventListener('click', event => {
 const conversationText = document.getElementById('conversationText');
 const conversationBtn = document.getElementById('conversationBtn');
 const conversationResult = document.getElementById('conversationResult');
+function parseConversationLine(rawLine, index) {
+  const raw = rawLine.trim();
+  const quoted = /^>/.test(raw) || /^\s*(?:quote|quoted|example)\s*:/i.test(raw);
+  const withoutQuote = raw.replace(/^>\s*/, '').replace(/^\s*(?:quote|quoted|example)\s*:\s*/i, '');
+  const match = withoutQuote.match(/^([^:]{1,40}):\s*(.+)$/);
+  return { index: index + 1, speaker: match ? match[1].trim() : 'Unlabelled speaker', text: match ? match[2].trim() : withoutQuote, quoted };
+}
+function analyseConversationLines(rawLines) {
+  const lines = rawLines.map(parseConversationLine);
+  const observations = [];
+  const denial = /\b(?:i|we|you)\s+(?:did\s+not|didn't|didnt|never|have not|haven't|wasn't|was not)\s+(?:request|ask for|approve|authori[sz]e|send|share|click|open|make|recognise|recognize)\b|\b(?:not|no)\s+(?:requested|authori[sz]ed|approved)\b/i;
+  const advice = /\b(?:never|do not|don't|dont|avoid|be careful|remember to|stay safe|report)\b[^.?!]*(?:password|passcode|code|link|payment|bank|account|login|scam|sender)/i;
+  const education = /\b(?:this is|that is|an example of|example:|security advice|awareness|phishing is|scammers? may)\b/i;
+  const credentialRequest = /\b(?:send|share|give|provide|forward|enter|type|reply with|tell me|confirm|verify|submit)\b[^.?!]{0,100}\b(?:password|passcode|one[- ]time code|otp|security code|verification code|login details|sign[- ]in details)\b|\b(?:password|passcode|one[- ]time code|otp|security code|verification code|login details|sign[- ]in details)\b[^.?!]{0,80}\b(?:required|needed|confirm|send|share|enter|provide)\b/i;
+  const paymentRequest = /\b(?:send|pay|transfer|wire|settle|authori[sz]e|confirm)\b[^.?!]{0,90}(?:£\s?\d[\d,.]*|\$\s?\d[\d,.]*|€\s?\d[\d,.]*|payment|money|bank details|card details|account number|fee|charge)\b|\b(?:payment|money|bank details|card details|account number|fee|charge)\b[^.?!]{0,70}\b(?:required|needed|confirm|send|pay|transfer|today|now)\b/i;
+  const approvalRequest = /\b(?:approve|authori[sz]e|allow|confirm)\b[^.?!]{0,80}\b(?:login|sign[- ]?in|account|payment|request)\b|\b(?:login|sign[- ]?in|account|payment)\b[^.?!]{0,80}\b(?:approval|approve|authori[sz]ation|confirm)\b/i;
+  const urgency = /\b(?:urgent(?:ly)?|immediately|act now|final warning|within\s+\d+|today|tonight|before\s+\d+|expires?|suspend|close)\b/i;
+  lines.forEach(line => {
+    const text = line.text;
+    const personal = /^(?:me|i|myself|user|customer|victim)$/i.test(line.speaker) || /\b(?:i|we)\b/i.test(text);
+    const base = {index: line.index, name: '', explanation: '', quote: `${line.speaker}: ${text}`};
+    if (line.quoted || education.test(text)) {
+      if (credentialRequest.test(text) || paymentRequest.test(text) || approvalRequest.test(text)) observations.push({...base, name: 'Quoted or educational content', explanation: 'This line describes or quotes scam content; it is not treated as a request from the speaker.'});
+      return;
+    }
+    if (denial.test(text) || (personal && /\b(?:did not|didn't|never|not)\b/i.test(text))) {
+      observations.push({...base, name: 'Denial or refusal', explanation: 'This line says the speaker did not request or approve the action; it is not labelled as a request.'});
+      return;
+    }
+    if (advice.test(text)) {
+      observations.push({...base, name: 'Security advice', explanation: 'This line advises the reader to avoid a risky action; advice is distinct from an instruction to disclose or pay.'});
+      return;
+    }
+    if (credentialRequest.test(text)) observations.push({...base, name: 'Credential request', explanation: 'This line asks the reader to disclose, enter or send a password, passcode or verification code.'});
+    else if (paymentRequest.test(text)) observations.push({...base, name: 'Payment request', explanation: 'This line asks or pressures the reader to send money or confirm payment details.'});
+    else if (approvalRequest.test(text)) observations.push({...base, name: 'Approval request', explanation: 'This line asks the reader to approve or authorise a login, account or payment request.'});
+    if (urgency.test(text) && (credentialRequest.test(text) || paymentRequest.test(text) || approvalRequest.test(text))) observations.push({...base, name: 'Pressure or deadline', explanation: 'This same message adds a deadline or pressure cue to the request.'});
+  });
+  return observations;
+}
 conversationBtn?.addEventListener('click', () => {
   conversationBtn.disabled = true;
   conversationBtn.classList.add('is-building');
@@ -415,16 +465,8 @@ conversationBtn?.addEventListener('click', () => {
   }, 520);
   const lines = (conversationText?.value || '').split(/\n+/).map(x => x.trim()).filter(Boolean);
   if (!lines.length) { conversationResult.textContent = 'Paste a redacted conversation first.'; return; }
-  const checks = [
-    ['impersonation', /\b(bank|nhs|university|helpdesk|support|official|security team)\b/i, 'Trusted-service or support identity appears'],
-    ['urgency', /\b(urgent|now|immediately|today|within \d+|final warning|close|suspend)\b/i, 'Pressure or deadline appears'],
-    ['secrecy', /\b(secret|do not tell|don.t tell|keep this between|confidential)\b/i, 'Secrecy request appears'],
-    ['payment or credentials', /\b(password|passcode|code|approve|login|pay|payment|transfer|£\s?\d)\b/i, 'Payment, credential or approval request appears'],
-    ['changed contact', /\b(new number|new account|different number|message me on|contact me here)\b/i, 'Changed contact or payment route appears']
-  ];
-  const observations = [];
-  lines.forEach((line, index) => checks.forEach(([name, pattern, explanation]) => { if (pattern.test(line)) observations.push({index: index + 1, name, explanation, quote: line}); }));
-  conversationResult.innerHTML = observations.length ? `<div class="conversation-meta">${lines.length} message${lines.length === 1 ? '' : 's'} reviewed locally · observations are not proof of malicious intent</div>${observations.map(item => `<article class="conversation-observation"><b>Message ${item.index} · ${escapeHtml(item.name)}</b><span>${escapeHtml(item.explanation)}</span><q>${escapeHtml(item.quote)}</q></article>`).join('')}` : '<div class="conversation-meta">No listed tactic was found in the supplied text. This does not prove the conversation is safe.</div>';
+  const observations = analyseConversationLines(lines);
+  conversationResult.innerHTML = observations.length ? `<div class="conversation-meta">${lines.length} message${lines.length === 1 ? '' : 's'} reviewed locally · each observation is attached to its exact line · observations are not proof of malicious intent</div>${observations.map(item => `<article class="conversation-observation"><b>Message ${item.index} · ${escapeHtml(item.name)}</b><span>${escapeHtml(item.explanation)}</span><q>${escapeHtml(item.quote)}</q></article>`).join('')}` : '<div class="conversation-meta">No request, denial, warning or quoted tactic was found in the supplied text. This does not prove the conversation is safe.</div>';
   conversationResult.classList.remove('is-ready');
   void conversationResult.offsetWidth;
   conversationResult.classList.add('is-ready');
