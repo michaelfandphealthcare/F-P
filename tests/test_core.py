@@ -44,6 +44,20 @@ class ScamShieldTests(unittest.TestCase):
         result = explain(text, self.model.predict_probability(text), self.model)
         self.assertIn('authentication_code', result['signals'])
 
+    def test_login_approval_request_has_accurate_explanation(self):
+        text = 'Your login approval request is waiting. Approve it now to keep access.'
+        result = explain(text, self.model.predict_probability(text), self.model)
+        self.assertIn('login_approval', result['signals'])
+        self.assertNotIn('authentication_code', result['signals'])
+        self.assertTrue(any('approve or authorise a login' in reason for reason in result['reasons']))
+
+    def test_harmless_training_notice_is_not_high_risk_without_evidence(self):
+        text = 'Hi Michael, football training is at 6 pm tomorrow. Bring your boots and a bottle of water. See you there!'
+        result = explain(text, self.model.predict_probability(text), self.model)
+        self.assertEqual(result['label'], 'Few warning signs detected')
+        self.assertEqual(result['signals'], [])
+        self.assertTrue(any('No specific scam phrase detected' in reason for reason in result['reasons']))
+
     def test_protective_security_advice_has_no_misleading_warning_reason(self):
         text = 'Never share your password or one-time code with anyone. Open your bank app only through the official app.'
         result = explain(text, self.model.predict_probability(text), self.model)

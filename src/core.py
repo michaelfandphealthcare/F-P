@@ -32,9 +32,14 @@ PROTECTIVE_ADVICE = re.compile(
     re.I,
 )
 AUTH_CODE_REQUEST = re.compile(
-    r"\b(?:reply|send|share|tell|give|provide|forward|enter|type|confirm|verify|approve|authori[sz]e)\b"
+    r"\b(?:reply|send|share|tell|give|provide|forward|enter|type|confirm|verify)\b"
     r"[^.?!]{0,100}\b(?:six[- ]digit|\d[- ]digit|security|verification|authentication|one[- ]time|otp|passcode|access|login)"
     r"\s*(?:code|number|approval|request|token)?\b",
+    re.I,
+)
+LOGIN_APPROVAL = re.compile(
+    r"\b(?:login|sign[- ]?in|account)\b[^.?!]{0,80}\b(?:approval|approve|authori[sz]e|allow|confirm)\b"
+    r"|\b(?:approve|authori[sz]e|allow)\b[^.?!]{0,80}\b(?:login|sign[- ]?in|account)\b",
     re.I,
 )
 SUPPORT_IMPERSONATION = re.compile(
@@ -51,6 +56,7 @@ SIGNAL_RULES = [
     ("impersonation", re.compile(r"\b(?:your\s+)?(?:bank|banking|tax office|hmrc|university|student account|nhs|health service|hospital|delivery company|parcel service|football club|ticket office|support team)\b[^.?!]{0,90}\b(?:verify|confirm|pay|send|sign|login|log in|click|open|update|claim|secure|avoid)\b|\b(?:verify|confirm|pay|send|sign|login|log in|click|open|update|claim|secure|avoid)\b[^.?!]{0,90}\b(?:bank|banking|tax office|hmrc|university|student account|nhs|health service|hospital|delivery company|parcel service|football club|ticket office|support team)\b", re.I), "It combines a trusted-service identity with a request or action."),
     ("family_impersonation", re.compile(r"\b(?:mum|mom|dad|son|daughter|brother|sister|family|friend)\b[^.?!]{0,100}\b(?:send|transfer|lend|pay|money|£\s?\d|bank)\b|\b(?:send|transfer|lend|pay)\b[^.?!]{0,70}\b(?:mum|mom|dad|son|daughter|brother|sister|family|friend)\b", re.I), "It resembles a family or friend impersonation request involving money."),
     ("authentication_code", AUTH_CODE_REQUEST, "It asks the reader to disclose or enter an authentication code, approval or verification number."),
+    ("login_approval", LOGIN_APPROVAL, "It asks the reader to approve or authorise a login; verify that request independently."),
     ("support_impersonation", SUPPORT_IMPERSONATION, "It presents itself as a support or helpdesk contact; verify that identity independently."),
 ]
 
@@ -171,7 +177,7 @@ def contextual_analysis(text: str, probability: float, model: ScamShieldModel) -
         if phrase:
             matched.append(key)
             evidence.append({"phrase": phrase, "explanation": message})
-        score += {"urgency": .18, "credentials": .45, "payment": .28, "link": .12, "impersonation": .12, "family_impersonation": .30, "authentication_code": .38, "support_impersonation": .10}[key]
+        score += {"urgency": .18, "credentials": .45, "payment": .28, "link": .12, "impersonation": .12, "family_impersonation": .30, "authentication_code": .38, "login_approval": .30, "support_impersonation": .10}[key]
     if protective or educational:
         score -= 0.45
         matched = []
@@ -180,10 +186,16 @@ def contextual_analysis(text: str, probability: float, model: ScamShieldModel) -
         score += 0.12
     if "authentication_code" in matched and "support_impersonation" in matched:
         score += 0.16
+    if "login_approval" in matched and ("urgency" in matched or "impersonation" in matched):
+        score += 0.10
     if "payment" in matched and "urgency" in matched:
         score += 0.08
     if any(pattern.search(clean) for pattern in LEGITIMATE_CONTEXT):
         score -= 0.16
+    if not matched and not protective and not educational:
+        # A high lexical score without a contextual signal is not explainable
+        # enough for a high-risk verdict. Keep it reviewable but conservative.
+        score = min(score, 0.32)
     if protective or educational:
         # A warning about scams is not itself a scam request. Keep the
         # classifier's explanation conservative even if lexical training
