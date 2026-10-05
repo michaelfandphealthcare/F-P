@@ -216,3 +216,11 @@ footer { border-color: #35566a; color: #aec2cf; }
 
 /* The supplied Lloyds raster contains a partial embedded wordmark; show only the horse mark and use the accessible text label beside it. */
 .scenario-brand.bank-brand img, .source-thumb.bank-thumb img { clip-path:inset(0 0 34% 0); margin-bottom:-16px; }
+
+/* Generic university scenario: no named institution or implied affiliation. */
+.generic-university-mark { display:grid; place-items:center; color:#c084fc; flex:0 0 auto; }
+.generic-university-mark svg { display:block; width:54px; height:42px; }
+.scenario-brand.uni-brand .brand-text-only { color:#e3edf3 !important; }
+.source-thumb.uni-thumb .generic-university-mark svg { width:62px; height:46px; }
+.source-thumb.uni-thumb::before { content:none !important; display:none !important; }
+@media (max-width:800px) { .generic-university-mark svg { width:44px; height:34px; } }
