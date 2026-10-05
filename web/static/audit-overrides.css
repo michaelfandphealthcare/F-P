@@ -224,3 +224,6 @@ footer { border-color: #35566a; color: #aec2cf; }
 .source-thumb.uni-thumb .generic-university-mark svg { width:62px; height:46px; }
 .source-thumb.uni-thumb::before { content:none !important; display:none !important; }
 @media (max-width:800px) { .generic-university-mark svg { width:44px; height:34px; } }
+
+/* The scenario heading already names Universities; keep the compact evidence logo slot icon-only. */
+.source-thumb.uni-thumb .brand-text-only { display:none !important; }
