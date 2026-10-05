@@ -192,3 +192,24 @@ footer { border-color: #35566a; color: #aec2cf; }
 /* Neutralise legacy per-sector thumb plates and duplicate Leeds fallback text. */
 .source-thumb.bank-thumb, .source-thumb.uni-thumb, .source-thumb.sport-thumb, .source-thumb.ncsc-thumb { background:transparent !important; border:0 !important; box-shadow:none !important; }
 .source-thumb.uni-thumb::before { content:none !important; display:none !important; }
+
+/* Evidence lab source cards: give each scenario room for a clear logo and readable copy. */
+.source-case-grid { grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:16px !important; }
+.source-case-grid article { display:grid !important; grid-template-columns:150px minmax(0,1fr); gap:18px !important; min-height:210px; padding:18px !important; }
+.source-thumb { width:150px !important; min-width:150px !important; height:92px !important; justify-content:center; align-self:start; }
+.source-thumb.bank-thumb img { width:54px !important; height:54px !important; }
+.source-thumb.bank-thumb .logo-wordmark { font-size:13px; letter-spacing:.08em; }
+.source-thumb.uni-thumb .brand-text-only { max-width:130px; font-size:13px; line-height:1.15; }
+.source-thumb.sport-thumb img { width:58px !important; height:58px !important; }
+.source-thumb.ncsc-thumb img { width:108px !important; height:46px !important; }
+.source-case-grid article h3 { font-size:18px !important; line-height:1.15; margin-bottom:8px; }
+.source-case-grid article p { font-size:13px !important; line-height:1.45; }
+.source-case-grid .case-action { font-size:12px; padding:10px 13px; margin-top:14px; }
+.source-case-grid .case-references { font-size:12px; }
+@media (max-width:800px) {
+  .source-case-grid { grid-template-columns:1fr !important; }
+  .source-case-grid article { grid-template-columns:110px minmax(0,1fr); gap:12px !important; }
+  .source-thumb { width:110px !important; min-width:110px !important; height:78px !important; }
+  .source-thumb.bank-thumb img { width:44px !important; height:44px !important; }
+  .source-thumb.bank-thumb .logo-wordmark, .source-thumb.uni-thumb .brand-text-only { font-size:10px; }
+}
