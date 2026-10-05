@@ -405,6 +405,14 @@ const conversationText = document.getElementById('conversationText');
 const conversationBtn = document.getElementById('conversationBtn');
 const conversationResult = document.getElementById('conversationResult');
 conversationBtn?.addEventListener('click', () => {
+  conversationBtn.disabled = true;
+  conversationBtn.classList.add('is-building');
+  conversationBtn.textContent = 'Building timeline…';
+  window.setTimeout(() => {
+    conversationBtn.disabled = false;
+    conversationBtn.classList.remove('is-building');
+    conversationBtn.textContent = 'Build conversation timeline';
+  }, 520);
   const lines = (conversationText?.value || '').split(/\n+/).map(x => x.trim()).filter(Boolean);
   if (!lines.length) { conversationResult.textContent = 'Paste a redacted conversation first.'; return; }
   const checks = [
@@ -417,6 +425,9 @@ conversationBtn?.addEventListener('click', () => {
   const observations = [];
   lines.forEach((line, index) => checks.forEach(([name, pattern, explanation]) => { if (pattern.test(line)) observations.push({index: index + 1, name, explanation, quote: line}); }));
   conversationResult.innerHTML = observations.length ? `<div class="conversation-meta">${lines.length} message${lines.length === 1 ? '' : 's'} reviewed locally · observations are not proof of malicious intent</div>${observations.map(item => `<article class="conversation-observation"><b>Message ${item.index} · ${escapeHtml(item.name)}</b><span>${escapeHtml(item.explanation)}</span><q>${escapeHtml(item.quote)}</q></article>`).join('')}` : '<div class="conversation-meta">No listed tactic was found in the supplied text. This does not prove the conversation is safe.</div>';
+  conversationResult.classList.remove('is-ready');
+  void conversationResult.offsetWidth;
+  conversationResult.classList.add('is-ready');
 });
 
 function inspectUrl() {

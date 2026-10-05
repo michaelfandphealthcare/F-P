@@ -227,3 +227,22 @@ footer { border-color: #35566a; color: #aec2cf; }
 
 /* The scenario heading already names Universities; keep the compact evidence logo slot icon-only. */
 .source-thumb.uni-thumb .brand-text-only { display:none !important; }
+
+/* Live interaction polish: staged timeline output and subtle sector motion. */
+.conversation-tools #conversationBtn.is-building { opacity:.75; cursor:wait; }
+.conversation-result.is-ready { animation: resultArrive .42s ease-out both; }
+.conversation-result.is-ready .conversation-observation { opacity:0; transform:translateY(8px); animation: observationArrive .42s ease-out forwards; }
+.conversation-result.is-ready .conversation-observation:nth-child(2) { animation-delay:.08s; }
+.conversation-result.is-ready .conversation-observation:nth-child(3) { animation-delay:.16s; }
+.conversation-result.is-ready .conversation-observation:nth-child(4) { animation-delay:.24s; }
+.conversation-result.is-ready .conversation-observation:nth-child(5) { animation-delay:.32s; }
+.sector-visual { animation: sectorBreathe 8s ease-in-out infinite; }
+.sector-visual:nth-child(2) { animation-delay:.7s; }
+.sector-visual:nth-child(3) { animation-delay:1.4s; }
+.sector-visual:nth-child(4) { animation-delay:2.1s; }
+.generic-university-mark { animation: universityPulse 3.8s ease-in-out infinite; }
+@keyframes resultArrive { from { opacity:.2; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
+@keyframes observationArrive { to { opacity:1; transform:translateY(0); } }
+@keyframes sectorBreathe { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-3px); } }
+@keyframes universityPulse { 0%,100% { filter:drop-shadow(0 0 0 rgba(192,132,252,0)); } 50% { filter:drop-shadow(0 0 8px rgba(192,132,252,.28)); } }
+@media (prefers-reduced-motion: reduce) { .sector-visual, .generic-university-mark, .conversation-result.is-ready, .conversation-result.is-ready .conversation-observation { animation:none !important; opacity:1 !important; transform:none !important; } }
