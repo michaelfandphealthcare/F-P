@@ -60,7 +60,7 @@ def evaluate(train_path: Path, test_path: Path) -> dict:
         "records": records,
         "baseline_metrics": {"precision": round(bprecision, 3), "recall": round(brecall, 3), "f1": round(bf1, 3), "confusion_matrix": {"true_negative": btn, "false_positive": bfp, "false_negative": bfn, "true_positive": btp}, "method": "TF-IDF-only score at threshold 0.5"},
         "failure_examples": [record for record in records if record["expected"] != record["actual"]],
-        "limitations": ["Small, hand-curated development and held-out sets are not representative of real-world prevalence.", "The screening score is not a calibrated probability.", "The challenge set is a development regression set and is not independent evidence after known failures have been corrected.", "No domain reputation or live URL verification is performed."],
+        "limitations": ["Small, hand-curated development and held-out sets are not representative of real-world prevalence.", "The screening score is not a calibrated probability.", "The challenge set is a development regression set and is not independent evidence after known failures have been corrected.", "The optional public-web check reports technical reachability and response metadata only; it does not provide domain reputation, malware scanning or a safety verdict."],
     }
 
 

@@ -9,7 +9,7 @@
       "phishing": 12
     }
   },
-  "evaluation_date": "2026-10-05",
+  "evaluation_date": "2026-10-06",
   "model_version": "contextual-baseline-v5",
   "decision_threshold": 0.36,
   "score_scale": "0\u2013100 screening score; not a calibrated probability",
@@ -261,7 +261,7 @@
     "Small, hand-curated development and held-out sets are not representative of real-world prevalence.",
     "The screening score is not a calibrated probability.",
     "The challenge set is a development regression set and is not independent evidence after known failures have been corrected.",
-    "No domain reputation or live URL verification is performed."
+    "The optional public-web check reports technical reachability and response metadata only; it does not provide domain reputation, malware scanning or a safety verdict."
   ],
   "dataset_role": "Development regression/challenge set; not an independent final test set.",
   "resolved_regressions": [

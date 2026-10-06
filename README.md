@@ -6,7 +6,7 @@ For a clean first explanation of the project, see [`docs/project_overview.md`](d
 
 ## Project boundary
 
-This is a controlled academic prototype. It analyses pasted fictional or public message text only. It does not connect to email accounts, send messages, visit links, make financial decisions or replace human judgement.
+This is a controlled academic prototype. It analyses pasted fictional or public message text and user-approved OCR text. It does not connect to email accounts, send messages, make financial decisions or replace human judgement. Its optional public-web checker requests technical response metadata for a supplied public URL; that check is not a safety or reputation verdict.
 
 ## Current prototype
 
@@ -16,6 +16,10 @@ The interface also includes a research dashboard and a multimodal evidence lab. 
 
 The current interface is published at https://scamshield-dahk.onrender.com/.
 Deployed verification endpoints are `/health` and `/api/meta`; they expose the non-secret build identifier and model version so a release can be checked without exposing credentials.
+
+### Public-web verification
+
+The Scanner separates two URL checks. **Check patterns** reviews the written address locally. **Check online** asks the server for public DNS, HTTPS, redirect, HTTP-status and content-type metadata. Private/internal destinations and non-standard web ports are blocked, and page bodies are not analysed. This is not malware analysis, domain reputation or proof that a site is safe; official NCSC, FCA and Report Fraud links are provided for independent follow-up.
 
 ## Run locally
 

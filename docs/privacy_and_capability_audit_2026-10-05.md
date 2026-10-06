@@ -10,11 +10,12 @@
 - A recording is limited to 60 seconds and sampled at four to seven frames. Duplicate OCR lines are combined; this is not continuous video understanding and can miss short-lived content.
 - When the user selects “Analyse extracted conversation”, the reviewed extracted text—not the screenshot or recording—is sent to `/api/analyse` for the current result.
 - Feedback counts are stored in browser `localStorage`; message contents are not stored there.
-- The link inspector parses text locally and does not navigate to or fetch the supplied address.
+- “Check patterns” parses the address locally and does not navigate to or fetch it.
+- “Check online” sends only the supplied public URL to `POST /api/link-inspect`. The server resolves public DNS and requests response metadata from the public site. It blocks local, private, reserved and non-standard-port targets, revalidates redirects and does not analyse the response body.
 
 ## Correct public wording
 
-The interface now states that text is sent only for the current analysis and is not stored by the app. It describes OCR as browser-local processing, while clarifying that analysed extracted text is sent to the service. It does not claim an inbox connection, live URL reputation or guaranteed privacy outside the documented implementation boundary.
+The interface now states that text is sent to the ScamShield server for the current request and that the application has no message database or inbox connection. It describes OCR as browser-local processing, while clarifying that analysed extracted text is sent to the service. The optional online URL check is described as public reachability and response metadata—not domain reputation, malware analysis or proof of safety.
 
 ## Remaining operational boundary
 

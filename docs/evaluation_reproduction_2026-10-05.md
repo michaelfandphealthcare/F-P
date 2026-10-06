@@ -28,4 +28,4 @@ The v5 rules correct two reproduced live failures: a changed-number family trans
 
 ## Limitations
 
-Both sets are small and hand-authored. They do not estimate real-world prevalence or production accuracy. The score is not a calibrated probability. Scenario groups are too small for stable per-scenario rates. The system performs no live URL reputation, domain-age or certificate check.
+Both sets are small and hand-authored. They do not estimate real-world prevalence or production accuracy. The score is not a calibrated probability. Scenario groups are too small for stable per-scenario rates. The optional public-web check reports DNS, HTTPS, redirect and response metadata; it is not a reputation, malware, domain-age or certificate-trust service and does not affect the measured detector results.

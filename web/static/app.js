@@ -15,6 +15,7 @@ const useOcrBtn = document.getElementById('useOcrBtn');
 const visualResult = document.getElementById('visualResult');
 const urlInput = document.getElementById('urlInput');
 const inspectUrlBtn = document.getElementById('inspectUrlBtn');
+const inspectOnlineBtn = document.getElementById('inspectOnlineBtn');
 const urlResult = document.getElementById('urlResult');
 const visualExampleBtn = document.getElementById('visualExampleBtn');
 const recordingExampleBtn = document.getElementById('recordingExampleBtn');
@@ -28,6 +29,8 @@ let analysisRequestId = 0;
 let visualAnalysisRequestId = 0;
 let scannerController = null;
 let visualController = null;
+let linkController = null;
+let linkRequestId = 0;
 let lightboxReturnFocus = null;
 let lastRecordingExample = '';
 const recordingDemoStems = new Set([
@@ -73,6 +76,35 @@ async function analyseTextRequest(text, controller, timeoutMs = 12000) {
   } finally {
     window.clearTimeout(timeout);
   }
+}
+
+function renderEvidenceFindings(data, compact = false) {
+  const evidence = Array.isArray(data.evidence) ? data.evidence : [];
+  if (!evidence.length) return compact ? '<li><span>✓</span><div>No contextual warning signal was returned.</div></li>' : '';
+  return evidence.map(item => {
+    const phrase = String(item.phrase || '');
+    const explanation = String(item.explanation || 'Observable evidence from the submitted text.');
+    if (phrase.startsWith('No specific')) {
+      return compact
+        ? `<li><span>✓</span><div>${escapeHtml(explanation)}</div></li>`
+        : `<div class="reason"><i>✓</i><span>${escapeHtml(explanation)}<small class="no-evidence">No warning excerpt was identified.</small></span></div>`;
+    }
+    return compact
+      ? `<li><span>✓</span><div><q>${escapeHtml(phrase)}</q><small>${escapeHtml(explanation)}</small></div></li>`
+      : `<div class="reason"><i>✓</i><span><q>${escapeHtml(phrase)}</q> — ${escapeHtml(explanation)}<button type="button" class="reason-evidence" data-evidence-phrase="${escapeHtml(phrase)}" title="Highlight this exact excerpt in the submitted message">View supporting text</button></span></div>`;
+  }).join('');
+}
+
+function trustedGuidance(data) {
+  const signals = new Set(data.signals || []);
+  const links = [
+    ['NCSC: recognise and report phishing', 'https://www.ncsc.gov.uk/collection/phishing-scams/report-scam-email'],
+  ];
+  if ([...signals].some(signal => ['payment', 'family_impersonation', 'credentials', 'authentication_code', 'login_approval', 'impersonation'].includes(signal))) {
+    links.push(['FCA: banking and account scams', 'https://www.fca.org.uk/consumers/banking-online-account-scams']);
+  }
+  if (data.label !== 'Few warning signs detected') links.push(['Report Fraud', 'https://www.reportfraud.police.uk/']);
+  return `<div class="trusted-guidance result-section"><h3>Independent online guidance</h3><p>These are official public resources, not evidence that the submitted sender is genuine.</p><div>${links.map(([label, url]) => `<a href="${url}" target="_blank" rel="noreferrer">${escapeHtml(label)} <span aria-hidden="true">↗</span></a>`).join('')}</div></div>`;
 }
 
 function openLightbox() {
@@ -424,9 +456,9 @@ if (useOcrBtn) useOcrBtn.addEventListener('click', async () => {
   try {
     const data = await analyseTextRequest(extractedText, visualController);
     if (requestId !== visualAnalysisRequestId || extractedText !== document.getElementById('ocrText').value.trim()) return;
-    const reasons = data.reasons.map(reason => `<li><span>✓</span>${escapeHtml(reason)}</li>`).join('');
+    const reasons = renderEvidenceFindings(data, true);
     const findingHeading = data.label === 'Few warning signs detected' ? 'What the analysis found' : 'Signals requiring attention';
-    visualResult.innerHTML = `<div class="visual-result-head"><div><span class="eyebrow">Uploaded chat evidence result</span><h3>${escapeHtml(data.label)}</h3><span class="band">${escapeHtml(data.band)}</span></div></div><h4>${findingHeading}</h4><ul>${reasons}</ul><h4>Safer next step</h4><p class="visual-action">${escapeHtml(data.action)}</p><small class="visual-boundary">${escapeHtml(data.score_meaning || 'This result is based on the current visible text and is not proof of fraud.')}</small>`;
+    visualResult.innerHTML = `<div class="visual-result-head"><div><span class="eyebrow">Uploaded chat evidence result</span><h3>${escapeHtml(data.label)}</h3><span class="band">${escapeHtml(data.band)}</span></div></div><h4>${findingHeading}</h4><ul>${reasons}</ul><h4>Safer next step</h4><p class="visual-action">${escapeHtml(data.action)}</p>${trustedGuidance(data)}<small class="visual-boundary">${escapeHtml(data.score_meaning || 'This result is based on the current visible text and is not proof of fraud.')}</small>`;
     visualResult.classList.remove('hidden');
     setEvidenceState('complete', 'Analysis complete. The result below matches the current edited text.');
   } catch (err) {
@@ -434,7 +466,12 @@ if (useOcrBtn) useOcrBtn.addEventListener('click', async () => {
     visualResult.classList.add('hidden');
     setEvidenceState('error', `${err.message} No result is being shown. Select Analyse extracted conversation to retry.`);
   }
-  finally { useOcrBtn.disabled = false; useOcrBtn.innerHTML = 'Analyse extracted conversation <span aria-hidden="true">→</span>'; }
+  finally {
+    if (requestId === visualAnalysisRequestId) {
+      useOcrBtn.disabled = false;
+      useOcrBtn.innerHTML = 'Analyse extracted conversation <span aria-hidden="true">→</span>';
+    }
+  }
 });
 
 document.getElementById('ocrText')?.addEventListener('input', () => {
@@ -709,29 +746,29 @@ analyseBtn.addEventListener('click', async () => {
   } catch (err) {
     if (err.name === 'AbortError') return;
     if (requestId === analysisRequestId) {
-      errorBox.textContent = err.message;
+      errorBox.innerHTML = `<span>${escapeHtml(err.message)}</span><button type="button" class="inline-retry" data-retry-analysis>Retry analysis</button>`;
       resultPanel.className = 'result-panel panel empty';
       resultPanel.innerHTML = '<div class="result-placeholder"><div class="shield">!</div><h2>Analysis did not complete</h2><p>No result is being shown for this message. Review the error and try again.</p></div>';
     }
   } finally {
-    resultPanel.removeAttribute('aria-busy');
-    analyseBtn.disabled = false;
-    analyseBtn.innerHTML = 'Analyse message <span aria-hidden="true">→</span>';
+    if (requestId === analysisRequestId) {
+      resultPanel.removeAttribute('aria-busy');
+      analyseBtn.disabled = false;
+      analyseBtn.innerHTML = 'Analyse message <span aria-hidden="true">→</span>';
+    }
   }
+});
+
+errorBox?.addEventListener('click', event => {
+  if (event.target.closest('[data-retry-analysis]')) analyseBtn.click();
 });
 
 function renderResult(data) {
   resultPanel.className = 'result-panel panel';
-  const evidence = data.evidence || [];
-  const reasons = data.reasons.map((reason, index) => {
-    const item = evidence[index];
-    const phrase = item?.phrase || '';
-    const control = phrase && !phrase.startsWith('No specific') ? `<button type="button" class="reason-evidence" data-evidence-phrase="${escapeHtml(phrase)}" title="Highlight this phrase in the submitted message">View supporting text</button>` : '<small class="no-evidence">No exact excerpt available.</small>';
-    return `<div class="reason"><i>✓</i><span>${escapeHtml(reason)}${control}</span></div>`;
-  }).join('');
+  const reasons = renderEvidenceFindings(data);
   const reasonHeading = data.label === 'Few warning signs detected' ? 'What the analysis found' : 'Signals requiring attention';
   const guided = guidedVerification(data);
-  resultPanel.innerHTML = `<div class="result-head"><div><div class="result-label">${escapeHtml(data.label)}</div><span class="band">${escapeHtml(data.band)}</span></div></div><div class="result-section"><h3>${reasonHeading}</h3>${reasons}</div><div class="result-section"><h3>Safer next step</h3><div class="action">${escapeHtml(data.action)}</div></div>${guided}<div class="feedback-box"><strong>Help improve the research</strong><span>Was this explanation useful?</span><div><button type="button" data-feedback="helpful">Yes, helpful</button><button type="button" data-feedback="unclear">Needs improvement</button></div><small id="feedbackStatus" aria-live="polite"></small></div><p class="result-disclaimer">${escapeHtml(data.score_meaning || 'This is decision support, not proof that a message is fraudulent.')}</p>`;
+  resultPanel.innerHTML = `<div class="result-head"><div><div class="result-label">${escapeHtml(data.label)}</div><span class="band">${escapeHtml(data.band)}</span></div></div><div class="result-section"><h3>${reasonHeading}</h3>${reasons}</div><div class="result-section"><h3>Safer next step</h3><div class="action">${escapeHtml(data.action)}</div></div>${trustedGuidance(data)}${guided}<div class="feedback-box"><strong>Help improve the research</strong><span>Was this explanation useful?</span><div><button type="button" data-feedback="helpful">Yes, helpful</button><button type="button" data-feedback="unclear">Needs improvement</button></div><small id="feedbackStatus" aria-live="polite"></small></div><p class="result-disclaimer">${escapeHtml(data.score_meaning || 'This is decision support, not proof that a message is fraudulent.')}</p>`;
   resultPanel.querySelectorAll('[data-feedback]').forEach(button => button.addEventListener('click', () => {
     const feedback = button.dataset.feedback;
     const key = `scamshield-feedback-${feedback}`;
@@ -835,13 +872,22 @@ conversationBtn?.addEventListener('click', () => {
   conversationResult.classList.add('is-ready');
 });
 
-function inspectUrl() {
+function parseUrlInput() {
   const raw = urlInput?.value.trim();
-  if (!raw) { urlResult.textContent = 'Paste a link first. ScamShield will inspect the text locally and will not open it.'; return; }
+  if (!raw) throw new Error('Paste a public web address first.');
   const extracted = raw.match(/https?:\/\/[^\s<>"']+|www\.[^\s<>"']+/i)?.[0] || raw;
   const candidate = extracted.replace(/[),.;!?]+$/, '');
+  try { return new URL(/^https?:\/\//i.test(candidate) ? candidate : `https://${candidate}`); }
+  catch { throw new Error('Unable to parse this as a normal web address. Paste the complete address, for example https://example.com.'); }
+}
+
+function inspectUrl() {
   let parsed;
-  try { parsed = new URL(/^https?:\/\//i.test(candidate) ? candidate : `https://${candidate}`); } catch { urlResult.innerHTML = '<strong class="url-danger">Unable to parse this as a normal web address.</strong><span>Paste the complete address, for example <b>https://example.com</b>.</span>'; return; }
+  try { parsed = parseUrlInput(); }
+  catch (error) {
+    urlResult.innerHTML = `<strong class="url-danger">Address needs attention</strong><span>${escapeHtml(error.message)}</span>`;
+    return;
+  }
   const host = parsed.hostname.toLowerCase();
   const findings = [];
   if (parsed.protocol !== 'https:') findings.push('not using HTTPS');
@@ -853,8 +899,59 @@ function inspectUrl() {
   const tone = findings.length ? 'url-caution' : 'url-clear';
   urlResult.innerHTML = `<strong class="${tone}">${status}</strong><span>Host: <b>${escapeHtml(host)}</b></span><span>${findings.length ? escapeHtml(findings.join('; ')) + '. Verify the organisation independently before acting.' : 'This local check found no obvious URL pattern. It does not prove the site is safe.'}</span><small>Local pattern check only · the address was not visited.</small>`;
 }
+
+async function inspectUrlOnline() {
+  let parsed;
+  try { parsed = parseUrlInput(); }
+  catch (error) {
+    urlResult.innerHTML = `<strong class="url-danger">Address needs attention</strong><span>${escapeHtml(error.message)}</span>`;
+    return;
+  }
+  const requestId = ++linkRequestId;
+  linkController?.abort('new link check');
+  linkController = new AbortController();
+  const timeout = window.setTimeout(() => linkController.abort('timeout'), 10000);
+  inspectOnlineBtn.disabled = true;
+  inspectOnlineBtn.textContent = 'Checking…';
+  urlResult.innerHTML = '<strong class="url-caution">Checking the public internet</strong><span>Confirming public DNS, HTTPS, redirects and response metadata. The page body is not downloaded for analysis.</span>';
+  try {
+    const response = await fetch('/api/link-inspect', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({url: parsed.href}),
+      signal: linkController.signal,
+    });
+    const raw = await response.text();
+    let data;
+    try { data = JSON.parse(raw); } catch { throw new Error('The online checker returned an unexpected response.'); }
+    if (!response.ok) throw new Error(data.error || 'The online checker could not inspect this address.');
+    if (requestId !== linkRequestId || parsed.href !== parseUrlInput().href) return;
+    const redirectCopy = data.redirects?.length
+      ? `${data.redirects.length} redirect${data.redirects.length === 1 ? '' : 's'}; final host: ${data.final_host}.`
+      : `No redirect observed; final host: ${data.final_host}.`;
+    const tone = data.https && data.status >= 200 && data.status < 400 ? 'url-clear' : 'url-caution';
+    urlResult.innerHTML = `<strong class="${tone}">Live public response: HTTP ${escapeHtml(data.status)}</strong><span>Requested host: <b>${escapeHtml(data.requested_host)}</b></span><span>${escapeHtml(redirectCopy)} ${data.https ? 'The final address uses HTTPS.' : 'The final address does not use HTTPS.'}</span><span>Content type: ${escapeHtml(data.content_type)} · ${escapeHtml(data.resolved_addresses)} public DNS address${data.resolved_addresses === 1 ? '' : 'es'} observed.</span><small>${escapeHtml(data.meaning)}</small>`;
+  } catch (error) {
+    if (requestId !== linkRequestId) return;
+    const message = linkController.signal.aborted && linkController.signal.reason === 'timeout'
+      ? 'The online check timed out. The site may be unavailable; try again later.'
+      : error.message;
+    urlResult.innerHTML = `<strong class="url-danger">Online check did not complete</strong><span>${escapeHtml(message)}</span><small>No safety verdict has been substituted. You can retry or use the official guidance links below.</small>`;
+  } finally {
+    window.clearTimeout(timeout);
+    if (requestId === linkRequestId) {
+      inspectOnlineBtn.disabled = false;
+      inspectOnlineBtn.textContent = 'Check online';
+    }
+  }
+}
 inspectUrlBtn?.addEventListener('click', inspectUrl);
+inspectOnlineBtn?.addEventListener('click', inspectUrlOnline);
 urlInput?.addEventListener('keydown', event => { if (event.key === 'Enter') inspectUrl(); });
+urlInput?.addEventListener('input', () => {
+  linkRequestId += 1;
+  linkController?.abort('address edited');
+});
 function escapeHtml(value) { return String(value).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
 
 const journeyTrack = document.querySelector('.journey-track');
