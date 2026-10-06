@@ -138,7 +138,7 @@ let demoExamples = [];
 fetch('/data/demo_examples.json').then(response => response.ok ? response.json() : []).then(items => { demoExamples = items; }).catch(() => {});
 
 let dashboardLoaded = false;
-const homeData = [['Bank impersonation',34],['Delivery / tax',28],['University account',19],['Sports / ticketing',17]];
+const homeData = [['Bank impersonation',34],['Delivery / tax',28],['Student account',19],['Sports / ticketing',17]];
 renderBars('homeChart', homeData);
 
 document.querySelectorAll('.nav-btn').forEach(btn => btn.addEventListener('click', () => {
@@ -166,6 +166,16 @@ document.querySelectorAll('[data-open-evidence]').forEach(button => button.addEv
   document.querySelector('.evidence-view')?.classList.remove('hidden');
   document.querySelector('.upload-card')?.scrollIntoView({behavior:'smooth', block:'start'});
   window.setTimeout(() => imageInput?.focus({preventScroll:true}), 450);
+}));
+
+document.querySelectorAll('[data-open-dashboard]').forEach(button => button.addEventListener('click', () => {
+  document.querySelectorAll('.nav-btn').forEach(item => item.classList.toggle('active', item.dataset.view === 'dashboard'));
+  document.body.dataset.activeView = 'dashboard';
+  document.querySelectorAll('.scanner-view').forEach(item => item.classList.add('hidden'));
+  document.querySelector('.evidence-view')?.classList.add('hidden');
+  document.querySelector('.dashboard-view')?.classList.remove('hidden');
+  loadDashboard();
+  document.querySelector('.dashboard-research-hero')?.scrollIntoView({behavior:'smooth', block:'start'});
 }));
 
 async function loadDashboard() {

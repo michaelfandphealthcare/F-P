@@ -59,6 +59,15 @@
 
 .error:not(:empty), .ocr-status:not(:empty) { padding:10px 12px; border-radius:8px; }
 .error:not(:empty) { background:#3b2024; border:1px solid #8e4548; color:#ffcbc6 !important; }
+
+/* Keep the opening panel functional and restrained: the movement belongs to the background. */
+.hero-insight::before { display:none !important; }
+.hero-insight > strong { margin-top:26px; }
+.insight-tools { position:relative; z-index:4; display:grid; gap:8px; margin-top:18px; }
+.insight-tools button { width:100%; min-height:38px; padding:9px 11px; border:1px solid rgba(174,194,207,.32); border-radius:8px; background:rgba(11,29,43,.78); color:#e3edf3; font:inherit; font-size:11px; font-weight:800; text-align:left; cursor:pointer; }
+.insight-tools button::after { content:'→'; float:right; color:#63d6c6; }
+.insight-tools button:hover { border-color:#63d6c6; background:#193449; }
+.insight-tools button:focus-visible { outline:3px solid #63d6c6; outline-offset:2px; }
 button:focus-visible, summary:focus-visible, input:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
   outline:3px solid #63d6c6 !important;
   outline-offset:3px !important;
