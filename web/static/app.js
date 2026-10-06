@@ -17,8 +17,11 @@ const urlInput = document.getElementById('urlInput');
 const inspectUrlBtn = document.getElementById('inspectUrlBtn');
 const urlResult = document.getElementById('urlResult');
 const visualExampleBtn = document.getElementById('visualExampleBtn');
+const recordingExampleBtn = document.getElementById('recordingExampleBtn');
 const removeImageBtn = document.getElementById('removeImageBtn');
 let selectedImageData = null;
+let selectedEvidenceKind = null;
+let selectedVideoUrl = null;
 let extractedText = '';
 let selectedExampleText = '';
 let analysisRequestId = 0;
@@ -26,6 +29,12 @@ let visualAnalysisRequestId = 0;
 let scannerController = null;
 let visualController = null;
 let lightboxReturnFocus = null;
+let lastRecordingExample = '';
+const recordingDemoStems = new Set([
+  'sms-bank-scam', 'sms-university-scam', 'sms-ticket-scam', 'sms-nhs-scam',
+  'email-invoice-scam', 'login-cloud-scam', 'sms-bank-safe', 'sms-university-safe',
+  'sms-ticket-safe', 'sms-nhs-safe', 'email-invoice-safe', 'login-cloud-safe',
+]);
 
 function setEvidenceState(state, messageText) {
   const status = document.getElementById('ocrStatus');
@@ -117,6 +126,16 @@ document.querySelectorAll('[data-scroll="workspace"]').forEach(btn => btn.addEve
   document.getElementById('message')?.focus({ preventScroll: true });
 }));
 
+document.querySelectorAll('[data-open-evidence]').forEach(button => button.addEventListener('click', () => {
+  document.querySelectorAll('.nav-btn').forEach(item => item.classList.toggle('active', item.dataset.view === 'evidence'));
+  document.body.dataset.activeView = 'evidence';
+  document.querySelectorAll('.scanner-view').forEach(item => item.classList.add('hidden'));
+  document.querySelector('.dashboard-view')?.classList.add('hidden');
+  document.querySelector('.evidence-view')?.classList.remove('hidden');
+  document.querySelector('.upload-card')?.scrollIntoView({behavior:'smooth', block:'start'});
+  window.setTimeout(() => imageInput?.focus({preventScroll:true}), 450);
+}));
+
 async function loadDashboard() {
   if (dashboardLoaded) return;
   try {
@@ -152,11 +171,12 @@ function renderChallengeEvaluation(evaluation) {
   root.innerHTML = `<div class="challenge-copy"><span class="chart-kicker">Development regression set</span><h2>Broader challenge checks</h2><p>${escapeHtml(dataset.test_rows || 0)} author-created messages · ${escapeHtml(dataset.class_distribution?.phishing || 0)} scam · ${escapeHtml(dataset.class_distribution?.legitimate || 0)} legitimate</p><small>${escapeHtml(evaluation.dataset_role || 'This development set is not an independent final test set.')}</small></div><div class="challenge-bar-chart" role="img" aria-label="Challenge set performance: precision ${Math.round((metrics.precision || 0) * 100)} percent, recall ${Math.round((metrics.recall || 0) * 100)} percent, F1 ${Math.round((metrics.f1 || 0) * 100)} percent"><div class="percentage-axis"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>${rows.map(([label, value]) => `<div class="percentage-bar-row"><b>${label}</b><div class="percentage-track"><span class="percentage-fill" style="width:${Math.round(value * 100)}%"></span></div><strong>${Math.round(value * 100)}%</strong></div>`).join('')}</div><div class="challenge-error-summary"><span><b>${matrix.false_positive || 0}</b><small>false alarms</small></span><span><b>${matrix.false_negative || 0}</b><small>missed scams</small></span></div><div class="challenge-failures"><strong>Current error analysis</strong>${failureCopy}${resolved.length ? `<strong>Resolved regression cases</strong>${resolved.map(item => `<p><b>${escapeHtml(item.case)}</b> — ${escapeHtml(item.previous)} Current: ${escapeHtml(item.current)}</p>`).join('')}` : ''}</div><details class="chart-data-table"><summary>View accessible data table</summary><table><caption>Development challenge-set performance</caption><thead><tr><th>Measure</th><th>Value</th></tr></thead><tbody>${rows.map(([label, value]) => `<tr><th>${label}</th><td>${Math.round(value * 100)}%</td></tr>`).join('')}<tr><th>False alarms</th><td>${matrix.false_positive || 0}</td></tr><tr><th>Missed scams</th><td>${matrix.false_negative || 0}</td></tr></tbody></table></details>`;
 }
 
-if (imageInput) imageInput.addEventListener('change', () => {
-  const file = imageInput.files[0];
-  if (!file) return;
+function resetUploadedEvidence() {
   visualController?.abort('evidence changed');
   visualAnalysisRequestId += 1;
+  if (selectedVideoUrl) URL.revokeObjectURL(selectedVideoUrl);
+  selectedVideoUrl = null;
+  selectedEvidenceKind = null;
   selectedExampleText = '';
   selectedImageData = null;
   extractedText = '';
@@ -165,19 +185,139 @@ if (imageInput) imageInput.addEventListener('change', () => {
   useOcrBtn?.classList.add('hidden');
   annotationChecks.forEach(check => { check.checked = false; });
   document.getElementById('annotationResult').textContent = 'Select visible features to generate an explainable visual-risk summary.';
-  if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
-    document.getElementById('imageMeta').textContent = 'Unsupported file type. Choose a PNG, JPG or WebP screenshot.';
+}
+
+function setImagePreviewAccessibility(enabled) {
+  if (enabled) {
+    imagePreview.tabIndex = 0;
+    imagePreview.setAttribute('role', 'button');
+    imagePreview.setAttribute('aria-label', 'Open uploaded evidence image at full size');
+  } else {
+    imagePreview.removeAttribute('tabindex');
+    imagePreview.removeAttribute('role');
+    imagePreview.removeAttribute('aria-label');
+  }
+}
+
+function formatDuration(seconds) {
+  const rounded = Math.max(0, Math.round(seconds));
+  return `${Math.floor(rounded / 60)}:${String(rounded % 60).padStart(2, '0')}`;
+}
+
+function seekVideo(video, time) {
+  return new Promise((resolve, reject) => {
+    const target = Math.min(Math.max(time, 0), Math.max(0, video.duration - 0.05));
+    if (video.readyState >= 2 && Math.abs(video.currentTime - target) < 0.02) { resolve(); return; }
+    const timeout = window.setTimeout(() => { cleanup(); reject(new Error('A recording frame could not be read.')); }, 5000);
+    const cleanup = () => {
+      window.clearTimeout(timeout);
+      video.removeEventListener('seeked', onSeeked);
+      video.removeEventListener('error', onError);
+    };
+    const onSeeked = () => { cleanup(); resolve(); };
+    const onError = () => { cleanup(); reject(new Error('The recording could not be decoded.')); };
+    video.addEventListener('seeked', onSeeked, {once:true});
+    video.addEventListener('error', onError, {once:true});
+    video.currentTime = target;
+  });
+}
+
+function mergeFrameText(frameTexts) {
+  const unique = [];
+  const seen = new Set();
+  frameTexts.forEach(text => text.split(/\n+/).forEach(rawLine => {
+    const line = rawLine.replace(/\s+/g, ' ').trim();
+    const key = line.toLocaleLowerCase().replace(/[^a-z0-9£$@:/.'!? -]/g, '').trim();
+    if (key.length < 2 || seen.has(key)) return;
+    seen.add(key);
+    unique.push(line);
+  }));
+  return unique.join('\n');
+}
+
+async function extractRecordingText() {
+  const video = imagePreview?.querySelector('video');
+  if (!video || !Number.isFinite(video.duration) || video.duration <= 0) throw new Error('The recording duration could not be read. Try MP4 or WebM.');
+  const frameCount = Math.min(7, Math.max(4, Math.ceil(video.duration / 8)));
+  const timestamps = Array.from({length:frameCount}, (_, index) => Math.min(video.duration - 0.05, Math.max(0.05, video.duration * (index / Math.max(1, frameCount - 1)))));
+  const canvas = document.createElement('canvas');
+  const scale = Math.min(1, 1280 / Math.max(video.videoWidth, 1));
+  canvas.width = Math.max(1, Math.round(video.videoWidth * scale));
+  canvas.height = Math.max(1, Math.round(video.videoHeight * scale));
+  const context = canvas.getContext('2d', {alpha:false});
+  if (!context) throw new Error('This browser could not prepare recording frames for text extraction.');
+  const originalTime = video.currentTime;
+  const frameTexts = [];
+  let worker = null;
+  try {
+    video.pause();
+    worker = await Tesseract.createWorker('eng');
+    for (let index = 0; index < timestamps.length; index += 1) {
+      setEvidenceState('extracting', `Reading recording frame ${index + 1} of ${timestamps.length} locally…`);
+      await seekVideo(video, timestamps[index]);
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const result = await worker.recognize(canvas);
+      const text = (result.data.text || '').trim();
+      if ((text.match(/[A-Za-z]/g) || []).length >= 8) frameTexts.push(text);
+    }
+  } finally {
+    await worker?.terminate?.();
+    try { await seekVideo(video, originalTime); } catch { video.currentTime = 0; }
+  }
+  return {text:mergeFrameText(frameTexts), sampled:timestamps.length};
+}
+
+if (imageInput) imageInput.addEventListener('change', () => {
+  const file = imageInput.files[0];
+  if (!file) return;
+  resetUploadedEvidence();
+  const extension = file.name.split('.').pop()?.toLowerCase() || '';
+  const isImage = ['image/png', 'image/jpeg', 'image/webp'].includes(file.type) || ['png', 'jpg', 'jpeg', 'webp'].includes(extension);
+  const isVideo = ['video/mp4', 'video/webm', 'video/quicktime'].includes(file.type) || ['mp4', 'webm', 'mov'].includes(extension);
+  if (!isImage && !isVideo) {
+    document.getElementById('imageMeta').textContent = 'Unsupported file type. Choose a PNG, JPG, WebP, MP4, WebM or MOV file.';
     imageInput.value = '';
-    setEvidenceState('error', 'Unsupported file type. Choose a PNG, JPG or WebP screenshot.');
+    setEvidenceState('error', 'Unsupported file type. Choose a supported screenshot or screen recording.');
     return;
   }
-  if (file.size > 8 * 1024 * 1024) {
-    document.getElementById('imageMeta').textContent = 'Image is larger than 8 MB. Choose a smaller redacted sample.';
+  const sizeLimit = isVideo ? 50 * 1024 * 1024 : 8 * 1024 * 1024;
+  if (file.size > sizeLimit) {
+    document.getElementById('imageMeta').textContent = `${isVideo ? 'Recording' : 'Image'} is larger than the ${isVideo ? '50' : '8'} MB limit.`;
     imageInput.value = '';
-    setEvidenceState('error', 'The file is larger than the 8 MB limit. Choose a smaller redacted screenshot.');
+    setEvidenceState('error', `The file is larger than the ${isVideo ? '50' : '8'} MB limit. Choose a shorter or smaller redacted capture.`);
     return;
   }
-  setEvidenceState('extracting', 'Checking the selected image…');
+  setEvidenceState('extracting', `Checking the selected ${isVideo ? 'recording' : 'screenshot'}…`);
+  if (isVideo) {
+    selectedEvidenceKind = 'video';
+    selectedVideoUrl = URL.createObjectURL(file);
+    selectedImageData = selectedVideoUrl;
+    imagePreview.innerHTML = `<video src="${selectedVideoUrl}" controls playsinline preload="metadata" aria-label="Uploaded redacted chat screen recording"></video>`;
+    setImagePreviewAccessibility(false);
+    removeImageBtn?.classList.remove('hidden');
+    const video = imagePreview.querySelector('video');
+    video.addEventListener('loadedmetadata', () => {
+      if (!Number.isFinite(video.duration) || video.duration <= 0 || video.duration > 60) {
+        document.getElementById('imageMeta').textContent = video.duration > 60 ? 'Recording is longer than 60 seconds. Trim it and try again.' : 'Recording duration could not be read.';
+        setEvidenceState('error', video.duration > 60 ? 'Trim the recording to 60 seconds or less before analysis.' : 'This recording could not be decoded. Try MP4 or WebM.');
+        ocrBtn.disabled = true;
+        return;
+      }
+      document.getElementById('imageMeta').innerHTML = `<strong>${escapeHtml(file.name)}</strong><span>${video.videoWidth} × ${video.videoHeight}px · ${formatDuration(video.duration)} · ${(file.size / (1024 * 1024)).toFixed(1)} MB</span>`;
+      document.getElementById('previewHint').textContent = 'Play the recording to check it. Text extraction samples several frames locally and combines repeated chat text.';
+      document.getElementById('visualFlags').innerHTML = '<span class="flag neutral">Recording preview ready</span><span class="flag neutral">Local frame OCR ready</span><span class="flag neutral">Editable transcript</span>';
+      ocrBtn.textContent = 'Extract chat text from recording';
+      ocrBtn.disabled = false;
+      removeImageBtn?.classList.remove('hidden');
+      setEvidenceState('ready', 'Recording ready. Play it to review, then extract visible chat text from sampled frames.');
+    }, {once:true});
+    video.addEventListener('error', () => {
+      ocrBtn.disabled = true;
+      setEvidenceState('error', 'This recording could not be played. Try an MP4 (H.264) or WebM file.');
+    }, {once:true});
+    return;
+  }
+  selectedEvidenceKind = 'image';
   const reader = new FileReader();
   reader.onload = event => {
     selectedImageData = event.target.result;
@@ -185,13 +325,13 @@ if (imageInput) imageInput.addEventListener('change', () => {
     img.onload = () => {
       const ratio = (img.width / img.height).toFixed(2);
       document.getElementById('imagePreview').innerHTML = `<img src="${event.target.result}" alt="Uploaded redacted fraud evidence preview">`;
-      imagePreview.tabIndex = 0;
-      imagePreview.setAttribute('role', 'button');
-      imagePreview.setAttribute('aria-label', 'Open uploaded evidence image at full size');
+      setImagePreviewAccessibility(true);
       document.getElementById('imageMeta').innerHTML = `<strong>${escapeHtml(file.name)}</strong><span>${img.width} × ${img.height}px · ${(file.size / 1024).toFixed(0)} KB · aspect ratio ${ratio}</span>`;
       setEvidenceState('ready', 'Image ready. Select Extract visible text to run browser-local OCR.');
       ocrBtn.disabled = false;
+      ocrBtn.textContent = 'Extract visible chat text';
       removeImageBtn?.classList.remove('hidden');
+      document.getElementById('previewHint').textContent = 'Select the image or press Enter to inspect it full size.';
       document.getElementById('visualFlags').innerHTML = '<span class="flag neutral">Image preview ready</span><span class="flag neutral">OCR ready</span><span class="flag neutral">Manual annotation available</span>';
     };
     img.onerror = () => {
@@ -208,7 +348,7 @@ if (imageInput) imageInput.addEventListener('change', () => {
 
 if (ocrBtn) ocrBtn.addEventListener('click', async () => {
   if (!selectedImageData) {
-    setEvidenceState('error', 'Choose an image before extracting visible text.');
+    setEvidenceState('error', 'Choose a screenshot or screen recording before extracting visible text.');
     return;
   }
   if (selectedExampleText) {
@@ -224,8 +364,27 @@ if (ocrBtn) ocrBtn.addEventListener('click', async () => {
     return;
   }
   ocrBtn.disabled = true;
-  setEvidenceState('extracting', 'Reading visible text locally…');
+  setEvidenceState('extracting', selectedEvidenceKind === 'video' ? 'Preparing recording frames locally…' : 'Reading visible text locally…');
   try {
+    if (selectedEvidenceKind === 'video') {
+      const recording = await extractRecordingText();
+      if (recording.text.length < 12) {
+        extractedText = '';
+        document.getElementById('ocrText').value = '';
+        useOcrBtn.classList.add('hidden');
+        document.getElementById('visualFlags').innerHTML = `<span class="flag warning">No readable chat text</span><span class="flag neutral">${recording.sampled} frames reviewed locally</span>`;
+        setEvidenceState('error', 'No usable chat text was found in the sampled frames. Try a clearer recording, pause longer on each message, or enter the visible text manually.');
+        return;
+      }
+      const reviewedText = recording.text.slice(0, 4000);
+      const wasTrimmed = recording.text.length > reviewedText.length;
+      extractedText = reviewedText;
+      document.getElementById('ocrText').value = reviewedText;
+      document.getElementById('visualFlags').innerHTML = `<span class="flag positive">Chat text extracted</span><span class="flag neutral">${recording.sampled} frames reviewed locally</span><span class="flag neutral">Duplicates combined</span>`;
+      setEvidenceState('ready', `Recording extraction complete. ${recording.sampled} frames were sampled locally${wasTrimmed ? '; the combined text was limited to 4,000 characters' : ''}. Review and correct it before analysis.`);
+      useOcrBtn.classList.remove('hidden');
+      return;
+    }
     const result = await Tesseract.recognize(selectedImageData, 'eng', { logger: message => {
       if (message.status === 'recognizing text') setEvidenceState('extracting', `Reading visible text locally… ${Math.round(message.progress * 100)}%`);
     }});
@@ -248,7 +407,7 @@ if (ocrBtn) ocrBtn.addEventListener('click', async () => {
       useOcrBtn.classList.add('hidden');
     }
   } catch (err) {
-    setEvidenceState('error', 'OCR could not process this image. Try a clearer screenshot or enter the visible text manually.');
+    setEvidenceState('error', selectedEvidenceKind === 'video' ? 'OCR could not process this recording. Try a clearer or shorter capture, or enter the visible chat text manually.' : 'OCR could not process this image. Try a clearer screenshot or enter the visible text manually.');
   } finally { ocrBtn.disabled = false; }
 });
 
@@ -259,7 +418,7 @@ if (useOcrBtn) useOcrBtn.addEventListener('click', async () => {
   visualController?.abort('new analysis');
   visualController = new AbortController();
   useOcrBtn.disabled = true;
-  useOcrBtn.textContent = 'Analysing image evidence...';
+  useOcrBtn.textContent = 'Analysing chat evidence...';
   visualResult.classList.add('hidden');
   setEvidenceState('analysing', 'Analysing the current edited text. The previous result has been cleared.');
   try {
@@ -267,15 +426,15 @@ if (useOcrBtn) useOcrBtn.addEventListener('click', async () => {
     if (requestId !== visualAnalysisRequestId || extractedText !== document.getElementById('ocrText').value.trim()) return;
     const reasons = data.reasons.map(reason => `<li><span>✓</span>${escapeHtml(reason)}</li>`).join('');
     const findingHeading = data.label === 'Few warning signs detected' ? 'What the analysis found' : 'Signals requiring attention';
-    visualResult.innerHTML = `<div class="visual-result-head"><div><span class="eyebrow">Image evidence result</span><h3>${escapeHtml(data.label)}</h3><span class="band">${escapeHtml(data.band)}</span></div></div><h4>${findingHeading}</h4><ul>${reasons}</ul><h4>Safer next step</h4><p class="visual-action">${escapeHtml(data.action)}</p><small class="visual-boundary">${escapeHtml(data.score_meaning || 'This result is based on the current visible text and is not proof of fraud.')}</small>`;
+    visualResult.innerHTML = `<div class="visual-result-head"><div><span class="eyebrow">Uploaded chat evidence result</span><h3>${escapeHtml(data.label)}</h3><span class="band">${escapeHtml(data.band)}</span></div></div><h4>${findingHeading}</h4><ul>${reasons}</ul><h4>Safer next step</h4><p class="visual-action">${escapeHtml(data.action)}</p><small class="visual-boundary">${escapeHtml(data.score_meaning || 'This result is based on the current visible text and is not proof of fraud.')}</small>`;
     visualResult.classList.remove('hidden');
     setEvidenceState('complete', 'Analysis complete. The result below matches the current edited text.');
   } catch (err) {
     if (err.name === 'AbortError') return;
     visualResult.classList.add('hidden');
-    setEvidenceState('error', `${err.message} No result is being shown. Select Analyse image evidence to retry.`);
+    setEvidenceState('error', `${err.message} No result is being shown. Select Analyse extracted conversation to retry.`);
   }
-  finally { useOcrBtn.disabled = false; useOcrBtn.innerHTML = 'Analyse image evidence <span aria-hidden="true">→</span>'; }
+  finally { useOcrBtn.disabled = false; useOcrBtn.innerHTML = 'Analyse extracted conversation <span aria-hidden="true">→</span>'; }
 });
 
 document.getElementById('ocrText')?.addEventListener('input', () => {
@@ -461,8 +620,10 @@ document.querySelectorAll('.case-action').forEach(button => {
 
 visualExampleBtn?.addEventListener('click', () => {
   if (!demoExamples.length) return;
+  resetUploadedEvidence();
   const item = demoExamples[Math.floor(Math.random() * demoExamples.length)];
   selectedImageData = `/static/assets/demo-examples/${item.asset}`;
+  selectedEvidenceKind = 'image';
   selectedExampleText = item.text;
   extractedText = '';
   visualResult?.classList.add('hidden');
@@ -470,35 +631,59 @@ visualExampleBtn?.addEventListener('click', () => {
   visualAnalysisRequestId += 1;
   document.getElementById('imagePreview').innerHTML = `<img src="${selectedImageData}" alt="Synthetic ${escapeHtml(item.label)} ${escapeHtml(item.type)} evidence example">`;
   document.getElementById('imageMeta').innerHTML = `<strong>${escapeHtml(item.asset)}</strong><span>${escapeHtml(item.type)} · synthetic ${escapeHtml(item.label)} sample</span>`;
-  imagePreview.tabIndex = 0;
-  imagePreview.setAttribute('role', 'button');
+  setImagePreviewAccessibility(true);
   imagePreview.setAttribute('aria-label', 'Open synthetic evidence image at full size');
   document.getElementById('visualFlags').innerHTML = `<span class="flag ${item.label === 'scam' ? 'warning' : 'positive'}">Synthetic ${escapeHtml(item.label)} example</span><span class="flag neutral">OCR ready</span><span class="flag neutral">Manual annotation available</span>`;
   setEvidenceState('ready', 'Synthetic example ready. Its pre-supplied demonstration text is separate from fresh-upload OCR.');
   document.getElementById('ocrText').textContent = '';
   document.getElementById('ocrText').value = '';
   ocrBtn.disabled = false;
+  ocrBtn.textContent = 'Extract visible chat text';
+  document.getElementById('previewHint').textContent = 'Select the image or press Enter to inspect it full size.';
   useOcrBtn.classList.add('hidden');
   removeImageBtn?.classList.remove('hidden');
 });
 
+recordingExampleBtn?.addEventListener('click', () => {
+  const candidates = demoExamples.filter(item => recordingDemoStems.has(item.asset.replace(/\.svg$/i, '')));
+  if (!candidates.length) {
+    setEvidenceState('error', 'The recording demonstration library is unavailable. Try a screenshot example instead.');
+    return;
+  }
+  resetUploadedEvidence();
+  const choices = candidates.filter(item => item.asset !== lastRecordingExample);
+  const item = (choices.length ? choices : candidates)[Math.floor(Math.random() * (choices.length || candidates.length))];
+  lastRecordingExample = item.asset;
+  const stem = item.asset.replace(/\.svg$/i, '');
+  selectedEvidenceKind = 'video';
+  selectedImageData = `/static/assets/demo-recordings/${stem}.mp4`;
+  imagePreview.innerHTML = `<video src="${selectedImageData}" controls autoplay muted loop playsinline preload="metadata" aria-label="Synthetic ${escapeHtml(item.label)} ${escapeHtml(item.type)} chat screen recording"></video>`;
+  setImagePreviewAccessibility(false);
+  const video = imagePreview.querySelector('video');
+  video.addEventListener('loadedmetadata', () => {
+    document.getElementById('imageMeta').innerHTML = `<strong>${escapeHtml(stem)}.mp4</strong><span>${video.videoWidth} × ${video.videoHeight}px · ${formatDuration(video.duration)} · synthetic ${escapeHtml(item.label)} recording</span>`;
+  }, {once:true});
+  document.getElementById('previewHint').textContent = 'This short fictional recording moves continuously. Extracting it uses real sampled-frame OCR rather than pre-supplied text.';
+  document.getElementById('visualFlags').innerHTML = `<span class="flag ${item.label === 'scam' ? 'warning' : 'positive'}">Synthetic ${escapeHtml(item.label)} recording</span><span class="flag neutral">Local frame OCR ready</span><span class="flag neutral">Review before analysis</span>`;
+  ocrBtn.textContent = 'Extract chat text from recording';
+  ocrBtn.disabled = false;
+  useOcrBtn.classList.add('hidden');
+  removeImageBtn?.classList.remove('hidden');
+  setEvidenceState('ready', 'Random synthetic recording ready. Play it or extract its visible chat text from sampled frames.');
+});
+
 removeImageBtn?.addEventListener('click', () => {
-  visualController?.abort('image removed');
-  visualAnalysisRequestId += 1;
-  selectedImageData = null; selectedExampleText = ''; extractedText = '';
+  resetUploadedEvidence();
   imageInput.value = '';
-  document.getElementById('imagePreview').innerHTML = '<div class="preview-placeholder">Your redacted email, SMS or login-page screenshot will appear here.</div>';
-  document.getElementById('imageMeta').textContent = 'No image selected yet.';
-  imagePreview.removeAttribute('tabindex');
-  imagePreview.removeAttribute('role');
-  imagePreview.removeAttribute('aria-label');
-  document.getElementById('visualFlags').innerHTML = '<span>Awaiting screenshot</span>';
-  setEvidenceState('idle', 'Choose a redacted screenshot to begin.');
-  document.getElementById('ocrText').value = '';
-  ocrBtn.disabled = true; useOcrBtn.classList.add('hidden'); visualResult?.classList.add('hidden');
+  document.getElementById('imagePreview').innerHTML = '<div class="preview-placeholder">Your redacted chat screenshot or screen recording will appear here.</div>';
+  document.getElementById('imageMeta').textContent = 'No screenshot or recording selected yet.';
+  setImagePreviewAccessibility(false);
+  document.getElementById('previewHint').textContent = 'Images can be opened full size. Recordings can be played before frame-by-frame text extraction.';
+  document.getElementById('visualFlags').innerHTML = '<span>Awaiting chat evidence</span>';
+  setEvidenceState('idle', 'Choose a redacted screenshot or recording to begin.');
+  ocrBtn.textContent = 'Extract visible chat text';
+  ocrBtn.disabled = true;
   removeImageBtn.classList.add('hidden');
-  annotationChecks.forEach(check => { check.checked = false; });
-  document.getElementById('annotationResult').textContent = 'Select visible features to generate an explainable visual-risk summary.';
 });
 
 analyseBtn.addEventListener('click', async () => {
